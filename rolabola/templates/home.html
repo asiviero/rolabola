@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block top_search_block %}
+  <form id="form_search" action="search/">
+    {{ search_form }}
+  </form>
+{% endblock %}
+{% block main_content_block %}
+  <h2>Hi, {{ user.first_name }} ({{ user.player.nickname }})</h2>
+  <a href="logout/?next=/">Logout</a>
+{% endblock %}

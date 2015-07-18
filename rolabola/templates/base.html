@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Social</title>
+  </head>
+  <body>
+    <header>
+      <h1>Social</h1>
+      {% block top_search_block %} {% endblock %}
+    </header>
+    <div class="main-container">
+    {% if user.is_authenticated %}
+      <div class="side-pane">
+        {% block side_pane_block %}{% endblock %}
+      </div>
+    {% endif %}
+    <div class="main-content">
+      {% block main_content_block %}{% endblock %}
+    </div>
+    </div>
+    <footer>
+      Social
+    </footer>
+  </body>
+</html>

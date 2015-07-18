@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block side_pane_block %}
+  <ul class="list-search">
+    <li><a href="/search/?{{name_query}}&qtype=User">Users</a></li>
+    <li><a href="/search/?{{name_query}}&qtype=Group">Groups</a></li>
+  </ul>
+{% endblock %}
+{% block main_content_block %}
+  {% for result in results %}
+    {% if model == "User" %}
+      {{ result.first_name }} {{ result.last_name }} ({{ result.player.nickname }})
+    {% endif %}
+    {% if model == "Group" %}
+      {{ result.name }}
+    {% endif %}
+  {% endfor %}
+{% endblock %}
