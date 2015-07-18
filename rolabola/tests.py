@@ -1,7 +1,9 @@
 from django.test import TestCase, Client
 from django.contrib.auth.models import User
+from django.utils import timezone
 from rolabola.models import *
 from rolabola.factories import *
+from decimal import Decimal
 import urllib
 
 # Create your tests here.
@@ -231,10 +233,10 @@ class MatchTest(TestCase):
 
         # User Schedules a match
         user_1.schedule_match(group_1,
-                                            date=(datetime.datetime.now() + datetime.timedelta(days=3)),
+                                            date=timezone.make_aware(datetime.datetime.now() + datetime.timedelta(days=3)),
                                             max_participants=15,
                                             min_participants=10,
-                                            price=10.0)
+                                            price=Decimal("20.0"))
 
         # Checks if a match was created
         self.assertEqual(Match.objects.all().count(),1)
@@ -243,4 +245,4 @@ class MatchTest(TestCase):
         self.assertEqual(MatchInvitation.objects.all().count(),3)
 
         # Check if user 4 was not invited
-        self.assertEqual(MatchInvitation.objects().all().count(),0)
+        self.assertEqual(MatchInvitation.objects.filter(player__pk=user_4.id).count(),0)

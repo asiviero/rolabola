@@ -3,6 +3,11 @@ from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
 from django.forms import ModelForm
 from django.db.models import Q
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+
+#from rolabola.signals import *
+
 import datetime
 
 class Player(models.Model):
@@ -67,7 +72,15 @@ class Player(models.Model):
             MembershipRequest.objects.get(group__pk=group.id,member__pk=user.id).accept()
 
     def schedule_match(self,group,date,max_participants,min_participants,price):
-        pass
+        if Membership.objects.filter(member__pk=self.id,role=Membership.GROUP_ADMIN):
+            Match.objects.create(
+                group=group,
+                date=date,
+                max_participants=max_participants,
+                min_participants=min_participants,
+                price=price
+            )
+
 
 class PlayerForm(ModelForm):
     class Meta:
@@ -143,3 +156,38 @@ class MembershipRequest(models.Model):
             group = self.group
         )
         self.save()
+
+
+def match_post_save(sender, **kwargs):
+    for player in kwargs["instance"].group.member_list.all():
+        MatchInvitation.objects.create(
+            player=player,
+            match=kwargs["instance"],
+        )
+
+class Match(models.Model):
+    date = models.DateTimeField()
+    max_participants = models.IntegerField(default=0)
+    min_participants = models.IntegerField(default=0)
+    price = models.DecimalField(max_digits=5,decimal_places=2)
+    group = models.ForeignKey(Group)
+    player_list = models.ManyToManyField(Player,through='MatchInvitation')
+
+post_save.connect(match_post_save, sender=Match)
+
+
+
+class MatchInvitation(models.Model):
+    CONFIRMED = "confirmed"
+    NOT_CONFIRMED = "not_confirmed"
+    ABSENCE_CONFIRMED = "absence_confirmed"
+    STATUS_CHOICES = (
+        (CONFIRMED, "Confirmed"),
+        (NOT_CONFIRMED, "Not Confirmed"),
+        (ABSENCE_CONFIRMED, "Absence Confirmed"),
+    )
+    player = models.ForeignKey(Player)
+    match = models.ForeignKey(Match)
+    status = models.CharField(max_length="50",
+                                                choices=STATUS_CHOICES,
+                                                default=NOT_CONFIRMED)
