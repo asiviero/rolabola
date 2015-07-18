@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
 from django.forms import ModelForm
 from django.db.models import Q
+import datetime
 
 class Player(models.Model):
     user = models.OneToOneField(User)
@@ -64,6 +65,9 @@ class Player(models.Model):
     def accept_request_group(self,group,user):
         if Membership.objects.filter(member__pk=self.id,role=Membership.GROUP_ADMIN):
             MembershipRequest.objects.get(group__pk=group.id,member__pk=user.id).accept()
+
+    def schedule_match(self,group,date,max_participants,min_participants,price):
+        pass
 
 class PlayerForm(ModelForm):
     class Meta:

@@ -1,6 +1,6 @@
 from django.conf.urls import include, url
 from django.contrib import admin
-from social_list import views
+from rolabola import views
 from django.contrib.auth import views as auth_views
 
 urlpatterns = [

@@ -3,7 +3,7 @@ from selenium.webdriver.common.keys import Keys
 from django.test import LiveServerTestCase, RequestFactory
 from django.contrib.auth import authenticate
 
-from social_list.factories import *
+from rolabola.factories import *
 import time
 
 class NewVisitorTest(LiveServerTestCase):

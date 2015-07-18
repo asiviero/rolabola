@@ -1,5 +1,5 @@
 from django.contrib.auth.models import User
-from social_list.models import Player, Friendship, FriendshipRequest, Group, Membership
+from rolabola.models import Player, Friendship, FriendshipRequest, Group, Membership
 import factory
 import faker
 from django.conf import settings

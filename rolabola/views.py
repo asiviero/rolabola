@@ -4,8 +4,8 @@ from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.models import User
 from django.forms.models import inlineformset_factory
-from social_list.models import Player, PlayerForm, UserForm, Group
-from social_list.forms import SearchForm
+from rolabola.models import Player, PlayerForm, UserForm, Group
+from rolabola.forms import SearchForm
 from django.db.models import Q
 import urllib
 

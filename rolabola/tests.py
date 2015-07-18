@@ -1,7 +1,7 @@
 from django.test import TestCase, Client
 from django.contrib.auth.models import User
-from social_list.models import *
-from social_list.factories import *
+from rolabola.models import *
+from rolabola.factories import *
 import urllib
 
 # Create your tests here.
@@ -216,3 +216,31 @@ class SearchTest(TestCase):
 
         self.assertContains(response,group_1.name)
         self.assertNotContains(response,group_2.name)
+
+class MatchTest(TestCase):
+
+    def test_user_can_schedule_match(self):
+        user_1 = PlayerFactory()
+        user_2 = PlayerFactory()
+        user_3 = PlayerFactory()
+        user_4 = PlayerFactory()
+        group_1 = user_1.create_group("Group 1", public=True)
+
+        user_2.join_group(group_1)
+        user_3.join_group(group_1)
+
+        # User Schedules a match
+        user_1.schedule_match(group_1,
+                                            date=(datetime.datetime.now() + datetime.timedelta(days=3)),
+                                            max_participants=15,
+                                            min_participants=10,
+                                            price=10.0)
+
+        # Checks if a match was created
+        self.assertEqual(Match.objects.all().count(),1)
+
+        # Checks if 3 match invitations were issued
+        self.assertEqual(MatchInvitation.objects.all().count(),3)
+
+        # Check if user 4 was not invited
+        self.assertEqual(MatchInvitation.objects().all().count(),0)
