@@ -1,0 +1,10 @@
+{% extends "home.html" %}
+
+{% block main_content_block %}
+  <h2>Create Group</h2>
+  <form id="form-group-creation" method="post">
+    {% csrf_token %}
+    {{ group_form }}
+    <input type="submit" />
+  </form>
+{% endblock %}

@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block side_pane_block %}
+  <h2>{{ group.name }}</h2>
+  {% if not user_in_group %}
+  <a href="{% url 'group-join' group.id %}">Join</a>
+  {% endif %}
+  <div id="member-pending-list">
+    <ul>
+      {% for member_request in request_list %}
+        <li>
+          {{ member_request.user.first_name }} {{ member_request.user.last_name }} ({{ member_request.nickname }})
+          <a href="{% url 'group-accept-request' group.id member_request.id %}">Accept</a>
+        </li>
+      {% endfor %}
+    </ul>
+  </div>
+  <div id="member-list">
+    <ul>
+      {% for member in group.member_list.all %}
+        <li>
+          {{ member.user.first_name }}  {{ member.user.last_name }} ({{ member.nickname }})
+        </li>
+      {% endfor %}
+    </ul>
+  </div>
+{% endblock %}

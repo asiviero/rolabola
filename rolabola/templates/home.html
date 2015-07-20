@@ -1,4 +1,14 @@
 {% extends "base.html" %}
+{% block side_pane_block %}
+  <div id="group-list">
+    <a href="{% url 'group-create' %}">Create Group</a>
+    <ul>
+      {% for membership in user.player.member_set %}
+        <li><a href="{% url 'Group' group.id %}">{{ membership.group.name }}</a></li>
+      {% endfor %}
+    </ul>
+  </div>
+{% endblock %}
 {% block top_search_block %}
   <form id="form_search" action="search/">
     {{ search_form }}

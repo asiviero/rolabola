@@ -2,6 +2,7 @@ from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from django.test import LiveServerTestCase, RequestFactory
 from django.contrib.auth import authenticate
+from django.test import Client
 
 from rolabola.factories import *
 import time
@@ -161,5 +162,154 @@ class SearchTest(LiveServerTestCase):
         self.assertRegexpMatches(redirected_url, "search/*")
         self.assertIn(self.group_1.name,self.browser.find_element_by_class_name("main-content").text)
 
-class UserAddTest(self):
-    pass
+class GroupTest(LiveServerTestCase):
+
+    user_1 = None
+    user_2 = None
+    user_3 = None
+    group_public = None
+    group_private = None
+
+    def setUp(self):
+        self.browser = webdriver.Firefox()
+        self.browser.implicitly_wait(0.5)
+
+        # Create a user
+        self.user_1 = PlayerFactory()
+        self.user_1.user.set_password("123456")
+        self.user_1.user.save()
+
+        self.user_2 = PlayerFactory()
+        self.user_2.user.set_password("123456")
+        self.user_2.user.save()
+
+        # Create groups
+        self.group_public = self.user_1.create_group("Public Group",public = True)
+        self.group_private = self.user_1.create_group("Private Group",public = False)
+
+    def tearDown(self):
+        self.browser.quit()
+
+    def test_user_can_create_group(self):
+
+        self.browser.get(self.live_server_url)
+
+        form_login = self.browser.find_element_by_id('form_login')
+        form_login.find_element_by_id("id_username").send_keys(self.user_1.user.username)
+        form_login.find_element_by_id("id_password").send_keys("123456")
+        form_login.find_element_by_css_selector("input[type='submit']").click()
+
+        # User clicks in create new group
+        time.sleep(1)
+        self.browser.find_element_by_link_text("Create Group").click()
+        time.sleep(1)
+
+        self.assertEqual(self.browser.current_url,"%s/group/create" % self.live_server_url)
+
+        form_group_creation = self.browser.find_element_by_id("form-group-creation")
+
+        # Fills the inputs
+        form_group_creation.find_element_by_id("id_name").send_keys("Group Created")
+        #form_group_creation.find_element_by_id("id_name").send_keys(keys.ENTER)
+
+        form_group_creation.find_element_by_css_selector("input[type='submit']").click()
+        time.sleep(1)
+
+        # Gets redirected
+        redirected_url = self.browser.current_url
+        self.assertRegexpMatches(redirected_url, "group/\d+/")
+        self.assertEqual("Group Created",self.browser.find_element_by_tag_name("h2").text)
+        self.assertNotIn("Join",self.browser.find_element_by_class_name("side-pane").text)
+        self.assertEqual(len(self.browser.find_element_by_id("member-list")
+                                                    .find_elements_by_tag_name("li")),1)
+
+    def test_user_can_join_public_group(self):
+
+        self.browser.get(self.live_server_url)
+
+        form_login = self.browser.find_element_by_id('form_login')
+        form_login.find_element_by_id("id_username").send_keys(self.user_2.user.username)
+        form_login.find_element_by_id("id_password").send_keys("123456")
+        form_login.find_element_by_css_selector("input[type='submit']").click()
+
+        # User enters the desired group url
+        self.browser.get("%s/group/%d/" % (self.live_server_url,self.group_public.id))
+
+        # User clicks in "Join"
+        self.browser.find_element_by_link_text("Join").click()
+        time.sleep(1)
+
+        # User now sees his name on the member list
+        self.assertIn(self.user_2.user.first_name,self.browser.find_element_by_id("member-list").text)
+
+    def test_user_can_join_private_group(self):
+
+        self.browser.get(self.live_server_url)
+
+        form_login = self.browser.find_element_by_id('form_login')
+        form_login.find_element_by_id("id_username").send_keys(self.user_2.user.username)
+        form_login.find_element_by_id("id_password").send_keys("123456")
+        form_login.find_element_by_css_selector("input[type='submit']").click()
+
+        # User enters the desired group url
+        self.browser.get("%s/group/%d/" % (self.live_server_url,self.group_private.id))
+
+        # User clicks in "Join"
+        self.browser.find_element_by_link_text("Join").click()
+        time.sleep(1)
+
+        # User doesn't see his name on the member list
+        self.assertNotIn(self.user_2.user.first_name,self.browser.find_element_by_id("member-list").text)
+
+        # User sees his name in the pending approval list
+        self.assertIn(self.user_2.user.first_name,self.browser.find_element_by_id("member-pending-list").text)
+
+        # User doesn't see a Join link anymore
+        self.assertNotIn("Join",self.browser.find_element_by_class_name("side-pane").text)
+
+        self.browser.get("%s/accounts/logout" % self.live_server_url)
+        self.browser.get(self.live_server_url)
+
+        form_login = self.browser.find_element_by_id('form_login')
+        form_login.find_element_by_id("id_username").send_keys(self.user_1.user.username)
+        form_login.find_element_by_id("id_password").send_keys("123456")
+        form_login.find_element_by_css_selector("input[type='submit']").click()
+
+        self.browser.get("%s/group/%d/" % (self.live_server_url,self.group_private.id))
+
+        # Admin sees a new user request
+        self.assertEqual(len(self.browser.find_element_by_id("member-pending-list").find_elements_by_tag_name("li")),1)
+        self.browser.find_element_by_id("member-pending-list").find_element_by_link_text("Accept").click()
+
+        self.assertIn(self.user_2.user.first_name,self.browser.find_element_by_id("member-list").text)
+        self.assertEqual(len(self.browser.find_element_by_id("member-list")
+                                                    .find_elements_by_tag_name("li")),2)
+
+
+    def test_user_can_join_once(self):
+
+        self.browser.get(self.live_server_url)
+
+        form_login = self.browser.find_element_by_id('form_login')
+        form_login.find_element_by_id("id_username").send_keys(self.user_2.user.username)
+        form_login.find_element_by_id("id_password").send_keys("123456")
+        form_login.find_element_by_css_selector("input[type='submit']").click()
+
+        # User enters the desired group url
+        self.browser.get("%s/group/%d/" % (self.live_server_url,self.group_public.id))
+
+        # User clicks in "Join"
+        self.browser.find_element_by_link_text("Join").click()
+        time.sleep(1)
+
+        # User now sees his name on the member list
+        self.assertIn(self.user_2.user.first_name,self.browser.find_element_by_id("member-list").text)
+        count = len(self.browser.find_element_by_id("member-list")
+                                                    .find_elements_by_tag_name("li"))
+
+        # User enters the join url again
+        self.browser.get("%s/group/%d/join" % (self.live_server_url,self.group_public.id))
+
+        # List remains the same size
+        self.assertEqual(count,len(self.browser.find_element_by_id("member-list")
+                                                    .find_elements_by_tag_name("li")))

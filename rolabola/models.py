@@ -20,6 +20,10 @@ class Player(models.Model):
                                                                         through_fields=('user_to','user_from'),
                                                                         symmetrical=False,
                                                                         related_name = 'request_list')
+
+    def __unicode__(self):
+        return u"%s %s (%s)" % (self.user.first_name,self.user.last_name,self.nickname)
+
     def add_user(self,friend,message=""):
 
         # Check if there isn't a FriendshipRequest involving this user or the possible friend
@@ -44,16 +48,19 @@ class Player(models.Model):
 
     def join_group(self,group):
         if group.public:
-            Membership.objects.create(
-                member = self,
-                group = group
-            )
+            # Check if a membership object exists
+            if not Membership.objects.filter(member__pk=self.id,group__pk=group.id).count():
+                Membership.objects.create(
+                    member = self,
+                    group = group
+                )
         else:
-            pass
-            MembershipRequest.objects.create(
-                member = self,
-                group = group
-            )
+            # Check if a membershiprequest object exists
+            if not MembershipRequest.objects.filter(member__pk=self.id,group__pk=group.id).count():
+                MembershipRequest.objects.create(
+                    member = self,
+                    group = group
+                )
 
     def create_group(self,name,public=True):
         group = Group.objects.create(
@@ -138,6 +145,11 @@ class Group(models.Model):
                                                                                     related_name = "request_list_group")
     public = models.BooleanField(default=True)
 
+class GroupForm(ModelForm):
+    class Meta:
+        model = Group
+        fields = ["name", "public"]
+
 class Membership(models.Model):
     GROUP_MEMBER = "group_member"
     GROUP_ADMIN = "group_admin"
@@ -156,13 +168,12 @@ class MembershipRequest(models.Model):
     group = models.ForeignKey(Group, related_name = "group_request")
     accepted = models.BooleanField(default=False)
     def accept(self):
-        accepted = True
         Membership.objects.create(
             member = self.member,
             group = self.group,
             role = Membership.GROUP_MEMBER
         )
-        self.save()
+        self.delete()
 
 
 def match_post_save(sender, **kwargs):
@@ -185,8 +196,6 @@ class Match(models.Model):
         return self.player_list.filter(matchinvitation__status=MatchInvitation.CONFIRMED)
 
 post_save.connect(match_post_save, sender=Match)
-
-
 
 class MatchInvitation(models.Model):
     CONFIRMED = "confirmed"

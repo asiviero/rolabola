@@ -13,5 +13,9 @@ urlpatterns = [
     url(r'^$', views.home, name="home"),
     url(r'^login/$', views.login_and_register),
     url(r'^logout/$', auth_views.logout_then_login),
-    url(r'^search/*$', views.search, name="search")
+    url(r'^search/*$', views.search, name="search"),
+    url(r'^group/(\d+)/$', views.group, name="Group"),
+    url(r'^group/create$', views.group_create, name="group-create"),
+    url(r'^group/(\d+)/join$', views.group_join, name="group-join"),
+    url(r'^group/(\d+)/accept/(\d+)$', views.group_accept_request, name="group-accept-request"),
 ]
