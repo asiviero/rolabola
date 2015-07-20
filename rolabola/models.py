@@ -72,7 +72,7 @@ class Player(models.Model):
             MembershipRequest.objects.get(group__pk=group.id,member__pk=user.id).accept()
 
     def schedule_match(self,group,date,max_participants,min_participants,price):
-        if Membership.objects.filter(member__pk=self.id,role=Membership.GROUP_ADMIN):
+        if Membership.objects.filter(member__pk=self.id,role=Membership.GROUP_ADMIN).count():
             Match.objects.create(
                 group=group,
                 date=date,
@@ -134,7 +134,7 @@ class Group(models.Model):
 
 class Membership(models.Model):
     GROUP_MEMBER = "group_member"
-    GROUP_ADMIN = "group_member"
+    GROUP_ADMIN = "group_admin"
     ROLES_IN_GROUP = (
         (GROUP_MEMBER, "Member"),
         (GROUP_ADMIN, "Admin"),
@@ -153,17 +153,19 @@ class MembershipRequest(models.Model):
         accepted = True
         Membership.objects.create(
             member = self.member,
-            group = self.group
+            group = self.group,
+            role = Membership.GROUP_MEMBER
         )
         self.save()
 
 
 def match_post_save(sender, **kwargs):
-    for player in kwargs["instance"].group.member_list.all():
-        MatchInvitation.objects.create(
-            player=player,
-            match=kwargs["instance"],
-        )
+    if kwargs["created"]:
+        for player in kwargs["instance"].group.member_list.all():
+            MatchInvitation.objects.create(
+                player=player,
+                match=kwargs["instance"],
+            )
 
 class Match(models.Model):
     date = models.DateTimeField()
