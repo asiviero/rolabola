@@ -272,7 +272,22 @@ class MatchTest(TestCase):
 
 
     def test_user_can_accept_match_invitation(self):
-        #user_1 = PlayerFactory()
-        #user_2 = PlayerFactory()
-        #group_1 = user_1.create_group("Group 1", public=True)
-        pass
+        user_1 = PlayerFactory()
+        user_2 = PlayerFactory()
+        user_3 = PlayerFactory()
+        group_1 = user_1.create_group("Group 1", public=True)
+        user_2.join_group(group_1)
+
+        # User Schedules a match
+        match = user_1.schedule_match(group_1,
+                                            date=timezone.make_aware(datetime.datetime.now() + datetime.timedelta(days=3)),
+                                            max_participants=15,
+                                            min_participants=10,
+                                            price=Decimal("20.0"))
+
+
+        user_2.accept_match_invitation(match=match)
+        # Check if user 3 can't confirm
+        user_3.accept_match_invitation(match=match)
+
+        self.assertEqual(len(match.get_confirmed_list()),1)

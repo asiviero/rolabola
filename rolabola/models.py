@@ -73,7 +73,7 @@ class Player(models.Model):
 
     def schedule_match(self,group,date,max_participants,min_participants,price):
         if Membership.objects.filter(member__pk=self.id,role=Membership.GROUP_ADMIN).count():
-            Match.objects.create(
+            return Match.objects.create(
                 group=group,
                 date=date,
                 max_participants=max_participants,
@@ -81,6 +81,12 @@ class Player(models.Model):
                 price=price
             )
 
+    def accept_match_invitation(self,match):
+        try:
+            if match.matchinvitation_set.get(player__pk=self.id):
+                match.matchinvitation_set.get(player__pk=self.id).confirm_presence()
+        except MatchInvitation.DoesNotExist as e:
+            pass
 
 class PlayerForm(ModelForm):
     class Meta:
@@ -175,6 +181,9 @@ class Match(models.Model):
     group = models.ForeignKey(Group)
     player_list = models.ManyToManyField(Player,through='MatchInvitation')
 
+    def get_confirmed_list(self):
+        return self.player_list.filter(matchinvitation__status=MatchInvitation.CONFIRMED)
+
 post_save.connect(match_post_save, sender=Match)
 
 
@@ -193,3 +202,10 @@ class MatchInvitation(models.Model):
     status = models.CharField(max_length="50",
                                                 choices=STATUS_CHOICES,
                                                 default=NOT_CONFIRMED)
+    def confirm_presence(self):
+        self.status = self.CONFIRMED
+        self.save()
+
+    def confirm_absence(self):
+        self.status = self.ABSENCE_CONFIRMED
+        self.save()
