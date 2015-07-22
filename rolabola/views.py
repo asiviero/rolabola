@@ -73,21 +73,23 @@ def search(request):
     })
 
 @login_required
-def group(request,id):
-    group = get_object_or_404(Group, pk=id)
+def group(request,group):
+    group = get_object_or_404(Group, pk=group)
+
     user_in_group = group.member_list.filter(pk=request.user.player.id).count() != 0 or \
         group.member_pending_list.count() != 0
-
+    is_admin = request.user.player in group.member_list.filter(membership__role=Membership.GROUP_ADMIN)
     #group.member_pending_list.all()
     return render(request, "group.html", {
         "group":group,
         "user_in_group":user_in_group,
-        "request_list":group.member_pending_list.all()
+        "request_list":group.member_pending_list.all(),
+        "is_admin":is_admin
     })
 
 @login_required
-def group_join(request,id):
-    group = get_object_or_404(Group, pk=id)
+def group_join(request,group):
+    group = get_object_or_404(Group, pk=group)
     request.user.player.join_group(group)
     return redirect(reverse("Group",args=(group.id,)))
 
@@ -103,10 +105,36 @@ def group_create(request):
     if request.method == 'POST':
         group_form = GroupForm(request.POST)
         if group_form.is_valid():
-            print(request.user.player)
             group = group_form.save(commit = False)
             group = request.user.player.create_group(name=group.name,public=group.public)
             return redirect(reverse("Group", args=(group.id,)))
     return render(request, "group_create.html", {
         "group_form":GroupForm
+    })
+
+@login_required
+def group_match_create(request,group):
+    if request.method == 'POST':
+        group_match_create_form = MatchForm(request.POST)
+        if group_match_create_form.is_valid():
+            print(group_match_create_form.is_valid())
+            match = request.user.player.schedule_match(
+                group=get_object_or_404(Group,pk=group),
+                date=group_match_create_form.cleaned_data["date"],
+                max_participants=group_match_create_form.cleaned_data["max_participants"],
+                min_participants=group_match_create_form.cleaned_data["min_participants"],
+                price=group_match_create_form.cleaned_data["price"],
+            )
+            return redirect(reverse("group-match", args=(match.group.id,match.id,)))
+    return render(request, "group_match_create.html", {
+        "group_match_create_form":MatchForm,
+    })
+
+@login_required
+def group_match(request,group,match):
+    group=get_object_or_404(Group,pk=group)
+    match=get_object_or_404(Match,pk=match)
+    return render(request, "group_match.html", {
+        "group":group,
+        "match": match
     })

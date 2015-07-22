@@ -18,4 +18,7 @@ urlpatterns = [
     url(r'^group/create$', views.group_create, name="group-create"),
     url(r'^group/(\d+)/join$', views.group_join, name="group-join"),
     url(r'^group/(\d+)/accept/(\d+)$', views.group_accept_request, name="group-accept-request"),
+    url(r'^group/(\d+)/match$', views.group_match_create, name="group-match-create"),
+    url(r'^group/(\d+)/match/(\d+)/$', views.group_match, name="group-match"),
+
 ]

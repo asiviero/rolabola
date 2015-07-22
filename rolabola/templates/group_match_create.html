@@ -1,0 +1,10 @@
+{% extends "home.html" %}
+
+{% block main_content_block %}
+  <h2>New Match</h2>
+  <form id="form-group-match-creation" method="post">
+    {% csrf_token %}
+    {{ group_match_create_form }}
+    <input type="submit" />
+  </form>
+{% endblock %}

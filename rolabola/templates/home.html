@@ -16,5 +16,13 @@
 {% endblock %}
 {% block main_content_block %}
   <h2>Hi, {{ user.first_name }} ({{ user.player.nickname }})</h2>
+  <div id="schedule-box">
+    {% for match_invitation in user.player.match_set.all %}
+      <div class="match-invitation">
+        <button>Yes</button>
+        <button>No</button>
+      </div>
+    {% endfor %}
+  </div>
   <a href="logout/?next=/">Logout</a>
 {% endblock %}

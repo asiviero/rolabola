@@ -197,6 +197,11 @@ class Match(models.Model):
 
 post_save.connect(match_post_save, sender=Match)
 
+class MatchForm(ModelForm):
+    class Meta:
+        model = Match
+        fields = ["date","max_participants","min_participants","price"]
+
 class MatchInvitation(models.Model):
     CONFIRMED = "confirmed"
     NOT_CONFIRMED = "not_confirmed"

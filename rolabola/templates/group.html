@@ -2,7 +2,10 @@
 {% block side_pane_block %}
   <h2>{{ group.name }}</h2>
   {% if not user_in_group %}
-  <a href="{% url 'group-join' group.id %}">Join</a>
+    <a href="{% url 'group-join' group.id %}">Join</a>
+  {% endif %}
+  {% if is_admin %}
+    <a href="{% url 'group-match-create' group.id %}">New Match</a>
   {% endif %}
   <div id="member-pending-list">
     <ul>

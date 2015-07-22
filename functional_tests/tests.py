@@ -356,14 +356,14 @@ class MatchTest(LiveServerTestCase):
         self.assertRegexpMatches(redirected_url, "group/\d+/match")
 
         # User fills the form with data on date, price, max and min people
-        form_match = self.browser.find_element_by_id("form-match-creation")
+        form_match = self.browser.find_element_by_id("form-group-match-creation")
         form_match.find_element_by_id("id_date").send_keys("05/09/2015")
         form_match.find_element_by_id("id_price").send_keys("10")
-        form_match.find_element_by_id("id_min_people").send_keys("10")
-        form_match.find_element_by_id("id_max_people").send_keys("15")
+        form_match.find_element_by_id("id_min_participants").send_keys("10")
+        form_match.find_element_by_id("id_max_participants").send_keys("15")
 
-        form_login.find_element_by_css_selector("input[type='submit']").click()
-
+        form_match.find_element_by_css_selector("input[type='submit']").click()
+        time.sleep(2)
         # Check if user was redirected to match page
         redirected_url = self.browser.current_url
         self.assertRegexpMatches(redirected_url, "match/\d+/")
@@ -383,7 +383,7 @@ class MatchTest(LiveServerTestCase):
         self.assertEqual(len(match_invitations),1)
 
         # Check if an acceptance box is present
-        buttons = match_invitations.find_elements_by_tag_name("button")
+        buttons = match_invitations[0].find_elements_by_tag_name("button")
         self.assertEqual(len(buttons),2)
 
         # Check if buttons are with the right labels
@@ -405,7 +405,7 @@ class MatchTest(LiveServerTestCase):
         self.assertEqual(len(match_invitations),1)
 
         # Check if an acceptance box is present
-        buttons = match_invitations.find_elements_by_tag_name("button")
+        buttons = match_invitations[0].find_elements_by_tag_name("button")
         self.assertEqual(len(buttons),2)
 
         # Check if buttons are with the right labels

@@ -145,6 +145,7 @@ class GroupTest(TestCase):
         user_2 = PlayerFactory()
         #group_1 = GroupFactory(public=False)
         group_1 = user_2.create_group("Group 1", public=False)
+        user_1.join_group(group_1)
         user_1.accept_request_group(group=group_1,user=user_1)
 
         # Check if a membership was not created
@@ -153,6 +154,18 @@ class GroupTest(TestCase):
 
         # Check if Group member_list was not updated
         self.assertEqual(len(group_1.member_list.all()),1)
+
+    def test_user_can_join_multiple_groups(self):
+        user_1 = PlayerFactory()
+        user_2 = PlayerFactory()
+        group_1 = user_2.create_group("Group 1", public=True)
+        group_2 = user_2.create_group("Group 1", public=True)
+        user_1.join_group(group_1)
+        user_1.join_group(group_2)
+
+        membership_list = Membership.objects.filter(member__pk=user_1.pk)
+        self.assertEqual(len(membership_list),2)
+
 
 
 class RegistrationTest(TestCase):
