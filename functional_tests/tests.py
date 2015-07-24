@@ -42,17 +42,11 @@ class NewVisitorTest(LiveServerTestCase):
         # User hits the submit button and waits for success
         form_registration.find_element_by_css_selector("input[type='submit']").click()
 
-        time.sleep(1)
         redirected_url = self.browser.current_url
         self.assertEqual(redirected_url,self.live_server_url + "/")
 
-        # User sees his first name and nickname on screen
-        page_text = self.browser.find_element_by_tag_name("body").text
-        self.assertIn("Hi, First Name (Nickname)", page_text)
 
-
-
-    def test_login(self):
+    def test_profile_page(self):
 
         # Existing user access the website, sees login and registration form
         self.browser.get(self.live_server_url)
@@ -67,10 +61,21 @@ class NewVisitorTest(LiveServerTestCase):
         # User hits the submit button and waits for success
         form_login.find_element_by_css_selector("input[type='submit']").click()
 
-        # User sees his first name and nickname on screen
-        page_text = self.browser.find_element_by_tag_name("body").text
-        self.assertIn("Hi, %s (%s)" % (self.user_1.user.first_name, self.user_1.nickname), page_text)
-        time.sleep(1)
+        # In the side pane, user sees a generic picture, name and nickname
+        side_pane = self.browser.find_element_by_class_name('side-pane')
+
+        img_user_profile = side_pane.find_element_by_css_selector("img.img-profile")
+        full_name = "%s %s" % (self.user_1.first_name,self.user_1.last_name)
+        self.assertIn(full_name,side_pane.text)
+        self.assertIn(self.user_1.nickname,side_pane.text)
+
+        # Group list is still empty
+        group_list_wrapper = side_pane.find_element_by_id("group-list-wrapper")
+        self.assertEqual(len(group_list_wrapper.find_element_by_tag_name("li")),0)
+        self.assertIn("No groups yet",group_list_wrapper.text)
+
+        # In main body, he will see a calendar view... (maybe this is a separate test)
+
 
 
     def test_logout(self):

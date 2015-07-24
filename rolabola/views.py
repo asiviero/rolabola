@@ -13,6 +13,7 @@ import urllib
 # Create your views here.
 @login_required
 def home(request):
+    print(request.user.player.picture)
     return render(request, "home.html", {
         "search_form" : SearchForm
     })

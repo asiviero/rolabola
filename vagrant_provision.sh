@@ -6,3 +6,4 @@ pip3 install django==1.8
 pip3 install --upgrade selenium
 pip3 install factory_boy
 pip3 install fake-factory
+pip3 install Pillow

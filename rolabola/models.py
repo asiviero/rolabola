@@ -13,6 +13,7 @@ import datetime
 class Player(models.Model):
     user = models.OneToOneField(User)
     nickname = models.CharField(max_length=255, default="")
+    picture = models.ImageField(upload_to="picture/%Y/%m/%d", default="/static/img/user_generic.gif", blank=True)
     friend_list = models.ManyToManyField('self',through='Friendship',
                                                                         through_fields=('user_from','user_to'),
                                                                         symmetrical=False)

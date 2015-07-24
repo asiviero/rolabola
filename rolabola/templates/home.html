@@ -1,7 +1,13 @@
 {% extends "base.html" %}
 {% block side_pane_block %}
+  <div id="personal-info">
+    <img class="img-profile" src="{{ user.player.picture }}" />
+    <h2>
+      {{user.first_name}} {{user.last_name}} <span class="nickname">({{user.player.nickname}})</span>
+    </h2>
+  </div>
   <div id="group-list">
-    <a href="{% url 'group-create' %}">Create Group</a>
+
     <ul>
       {% for membership in user.player.member_set %}
         <li><a href="{% url 'Group' group.id %}">{{ membership.group.name }}</a></li>
@@ -15,7 +21,6 @@
   </form>
 {% endblock %}
 {% block main_content_block %}
-  <h2>Hi, {{ user.first_name }} ({{ user.player.nickname }})</h2>
   <div id="schedule-box">
     {% for match_invitation in user.player.match_set.all %}
       <div class="match-invitation">

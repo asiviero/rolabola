@@ -2,6 +2,9 @@ from django.conf.urls import include, url
 from django.contrib import admin
 from rolabola import views
 from django.contrib.auth import views as auth_views
+from django.conf import settings
+from django.conf.urls.static import static
+
 
 urlpatterns = [
     # Examples:
@@ -21,4 +24,4 @@ urlpatterns = [
     url(r'^group/(\d+)/match$', views.group_match_create, name="group-match-create"),
     url(r'^group/(\d+)/match/(\d+)/$', views.group_match, name="group-match"),
 
-]
+] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
