@@ -1,16 +1,20 @@
 {% extends "base.html" %}
 {% block side_pane_block %}
-  <div id="personal-info">
-    <img class="img-profile" src="{{ user.player.picture }}" />
-    <h2>
-      {{user.first_name}} {{user.last_name}} <span class="nickname">({{user.player.nickname}})</span>
-    </h2>
+  <div id="personal-info" class="row">
+    <div class="col m3">
+      <img class="img-profile responsive-img circle" src="{{ user.player.picture }}" />
+    </div>
+    <div class="col m9">
+      <h2>
+        {{user.first_name}} {{user.last_name}} <span class="nickname">({{user.player.nickname}})</span>
+      </h2>
+    </div>
   </div>
   <div id="group-list-wrapper">
 
     <ul>
-      {% for membership in user.player.member_set %}
-        <li><a href="{% url 'Group' group.id %}">{{ membership.group.name }}</a></li>
+      {% for membership in user.player.membership_set.all %}
+        <li><a href="{% url 'Group' membership.group.id %}">{{ membership.group.name }}</a></li>
       {% empty %}
         <li>No groups yet</li>
       {% endfor %}
@@ -32,4 +36,19 @@
     {% endfor %}
   </div>
   <a href="logout/?next=/">Logout</a>
+  <div class="fixed-action-btn">
+  <a class="btn-floating btn-large waves-effect waves-light green" href="{% url 'group-match-create' 0 %}">
+    <i class="material-icons">add</i>
+  </a>
+  <ul>
+    {% for membership in user.player.membership_set.all %}
+      <li>
+        <a class="btn-floating" href="{% url 'group-match-create' membership.group.id %}">
+          <img class="responsive-img circle" src="{{ membership.group.picture }}" />
+        </a>
+      </li>
+    {% endfor %}
+   </ul>
+</div>
+
 {% endblock %}

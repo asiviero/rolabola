@@ -4,20 +4,23 @@
     {% load staticfiles %}
     {% include 'material/includes/material_css.html' %}
     {% include 'material/includes/material_js.html' %}
+    {% load material_form %}
+    <link href="http://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Social</title>
   </head>
   <body>
     <header>
-      <h1>Social</h1>
+      <h1><a href="{% url 'home' %}">Rolabola</a></h1>
       {% block top_search_block %} {% endblock %}
     </header>
-    <div class="main-container">
+    <div class="main-container row">
     {% if user.is_authenticated %}
-      <div class="side-pane">
+      <div class="side-pane col m3">
         {% block side_pane_block %}{% endblock %}
       </div>
     {% endif %}
-    <div class="main-content">
+    <div class="main-content col m9">
       {% block main_content_block %}{% endblock %}
     </div>
     </div>

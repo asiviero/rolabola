@@ -108,4 +108,4 @@ STATIC_URL = '/static/'
 
 LOGIN_URL = '/login/'
 
-MEDIA_URL = '/files/'
+MEDIA_URL = '/media/'

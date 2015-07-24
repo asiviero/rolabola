@@ -145,11 +145,12 @@ class Group(models.Model):
     member_pending_list = models.ManyToManyField(Player,through='MembershipRequest',
                                                                                     related_name = "request_list_group")
     public = models.BooleanField(default=True)
+    picture = models.ImageField(default="/static/img/group_default.jpg",upload_to="group/%Y/%m/%d")
 
 class GroupForm(ModelForm):
     class Meta:
         model = Group
-        fields = ["name", "public"]
+        fields = ["name", "public", "picture"]
 
 class Membership(models.Model):
     GROUP_MEMBER = "group_member"
