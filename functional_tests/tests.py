@@ -65,13 +65,13 @@ class NewVisitorTest(LiveServerTestCase):
         side_pane = self.browser.find_element_by_class_name('side-pane')
 
         img_user_profile = side_pane.find_element_by_css_selector("img.img-profile")
-        full_name = "%s %s" % (self.user_1.first_name,self.user_1.last_name)
+        full_name = "%s %s" % (self.user_1.user.first_name,self.user_1.user.last_name)
         self.assertIn(full_name,side_pane.text)
         self.assertIn(self.user_1.nickname,side_pane.text)
 
         # Group list is still empty
         group_list_wrapper = side_pane.find_element_by_id("group-list-wrapper")
-        self.assertEqual(len(group_list_wrapper.find_element_by_tag_name("li")),0)
+        self.assertEqual(len(group_list_wrapper.find_elements_by_tag_name("li")),1)
         self.assertIn("No groups yet",group_list_wrapper.text)
 
         # In main body, he will see a calendar view... (maybe this is a separate test)

@@ -6,11 +6,13 @@
       {{user.first_name}} {{user.last_name}} <span class="nickname">({{user.player.nickname}})</span>
     </h2>
   </div>
-  <div id="group-list">
+  <div id="group-list-wrapper">
 
     <ul>
       {% for membership in user.player.member_set %}
         <li><a href="{% url 'Group' group.id %}">{{ membership.group.name }}</a></li>
+      {% empty %}
+        <li>No groups yet</li>
       {% endfor %}
     </ul>
   </div>
