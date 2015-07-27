@@ -5,7 +5,8 @@ from django.forms import ModelForm
 from django.db.models import Q
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-
+#import os
+#from social import settings
 #from rolabola.signals import *
 
 import datetime
@@ -63,10 +64,11 @@ class Player(models.Model):
                     group = group
                 )
 
-    def create_group(self,name,public=True):
+    def create_group(self,name,public=True,picture=None):
         group = Group.objects.create(
             name=name,
-            public=public
+            public=public,
+            picture=picture
         )
         Membership.objects.create(
             member=self,
@@ -145,7 +147,7 @@ class Group(models.Model):
     member_pending_list = models.ManyToManyField(Player,through='MembershipRequest',
                                                                                     related_name = "request_list_group")
     public = models.BooleanField(default=True)
-    picture = models.ImageField(default="/static/img/group_default.jpg",upload_to="group/%Y/%m/%d")
+    picture = models.ImageField(default="/static/img/group_default.jpg",upload_to="rolabola/media/group/%Y/%m/%d")
 
 class GroupForm(ModelForm):
     class Meta:

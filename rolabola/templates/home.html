@@ -44,7 +44,7 @@
     {% for membership in user.player.membership_set.all %}
       <li>
         <a class="btn-floating" href="{% url 'group-match-create' membership.group.id %}">
-          <img class="responsive-img circle" src="{{ membership.group.picture }}" />
+          <img class="responsive-img circle" src="{{ MEDIA_URL}}{{ membership.group.picture }}" />
         </a>
       </li>
     {% endfor %}

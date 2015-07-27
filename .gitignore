@@ -60,3 +60,6 @@ docs/_build/
 
 # PyBuilder
 target/
+
+# Files uploaded
+rolabola/media/*

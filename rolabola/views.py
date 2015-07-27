@@ -103,10 +103,11 @@ def group_accept_request(request,group,player):
 @login_required
 def group_create(request):
     if request.method == 'POST':
-        group_form = GroupForm(request.POST)
+        group_form = GroupForm(request.POST, request.FILES)
         if group_form.is_valid():
+            print(request.FILES)
             group = group_form.save(commit = False)
-            group = request.user.player.create_group(name=group.name,public=group.public)
+            group = request.user.player.create_group(name=group.name,public=group.public,picture=group.picture)            
             return redirect(reverse("Group", args=(group.id,)))
     return render(request, "group_create.html", {
         "group_form":GroupForm

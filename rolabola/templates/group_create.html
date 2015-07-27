@@ -2,7 +2,7 @@
 
 {% block main_content_block %}
   <h2>Create Group</h2>
-  <form id="form-group-creation" method="post">
+  <form id="form-group-creation" method="post"  enctype="multipart/form-data">
     {% csrf_token %}
     {{ group_form }}
     <input type="submit" />
