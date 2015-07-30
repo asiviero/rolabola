@@ -5,6 +5,8 @@ from django.contrib.auth import authenticate
 from django.test import Client
 
 from rolabola.factories import *
+import datetime
+import dateutil
 import time
 
 class NewVisitorTest(LiveServerTestCase):
@@ -362,7 +364,7 @@ class MatchTest(LiveServerTestCase):
 
         # User fills the form with data on date, price, max and min people
         form_match = self.browser.find_element_by_id("form-group-match-creation")
-        form_match.find_element_by_id("id_date").send_keys("05/09/2015")
+        form_match.find_element_by_id("id_date").send_keys(datetime.date.today().strftime("%m/%d/%Y"))
         form_match.find_element_by_id("id_price").send_keys("10")
         form_match.find_element_by_id("id_min_participants").send_keys("10")
         form_match.find_element_by_id("id_max_participants").send_keys("15")
@@ -385,15 +387,36 @@ class MatchTest(LiveServerTestCase):
         self.browser.get(self.live_server_url)
 
         match_invitations = self.browser.find_element_by_id("schedule-box").find_elements_by_class_name("match-invitation")
+
+        # User sees a table with a calendar
+        calendar_view_rows = self.browser.find_element_by_id("schedule-box").find_elements_by_tag_name("tr")
+
+        self.assertEqual(len(calendar_view_rows),2)
+
+        # assert the columns
+        self.assertEqual(len(calendar_view_rows[0].find_elements_by_tag_name("th")),7)
+        self.assertEqual(len(calendar_view_rows[1].find_elements_by_tag_name("td")),7)
+
+        # assert the days
+        last_sunday = str((datetime.date.today()+dateutil.relativedelta.relativedelta(weekday=dateutil.relativedelta.SU(-1))).day)
+        next_saturday = str((datetime.date.today()+dateutil.relativedelta.relativedelta(weekday=dateutil.relativedelta.SA(+1))).day)
+        self.assertIn("Sun",calendar_view_rows[0].find_elements_by_tag_name("th")[0].text)
+        self.assertIn(last_sunday,calendar_view_rows[0].find_elements_by_tag_name("th")[0].text)
+        self.assertIn("Sat",calendar_view_rows[0].find_elements_by_tag_name("th")[-1].text)
+        self.assertIn(next_saturday,calendar_view_rows[0].find_elements_by_tag_name("th")[-1].text)
+
         self.assertEqual(len(match_invitations),1)
 
         # Check if an acceptance box is present
-        buttons = match_invitations[0].find_elements_by_tag_name("button")
-        self.assertEqual(len(buttons),2)
+        button_container = match_invitations[0].find_element_by_class_name("confirm-container")
+
+        # User sees two links inside them
+        links = button_container.find_elements_by_tag_name("a")
+        self.assertEqual(len(links),2)
 
         # Check if buttons are with the right labels
-        self.assertEqual(buttons[0].text,"Yes")
-        self.assertEqual(buttons[1].text,"No")
+        self.assertEqual(links[0].find_element_by_tag_name("i").text,"done")
+        self.assertEqual(links[1].find_element_by_tag_name("i").text,"clear")
 
         # Logs out
         self.browser.find_element_by_link_text("Logout").click()
@@ -407,12 +430,80 @@ class MatchTest(LiveServerTestCase):
         form_login.find_element_by_css_selector("input[type='submit']").click()
 
         match_invitations = self.browser.find_element_by_id("schedule-box").find_elements_by_class_name("match-invitation")
+
+        # User sees a table with a calendar
+        calendar_view_rows = self.browser.find_element_by_id("schedule-box").find_elements_by_tag_name("tr")
+
+        self.assertEqual(len(calendar_view_rows),2)
+
+        # assert the columns
+        self.assertEqual(len(calendar_view_rows[0].find_elements_by_tag_name("th")),7)
+        self.assertEqual(len(calendar_view_rows[1].find_elements_by_tag_name("td")),7)
+
+        # assert the days
+        last_sunday = str((datetime.date.today()+dateutil.relativedelta.relativedelta(weekday=dateutil.relativedelta.SU(-1))).day)
+        next_saturday = str((datetime.date.today()+dateutil.relativedelta.relativedelta(weekday=dateutil.relativedelta.SA(+1))).day)
+        self.assertIn("Sun",calendar_view_rows[0].find_elements_by_tag_name("th")[0].text)
+        self.assertIn(last_sunday,calendar_view_rows[0].find_elements_by_tag_name("th")[0].text)
+        self.assertIn("Sat",calendar_view_rows[0].find_elements_by_tag_name("th")[-1].text)
+        self.assertIn(next_saturday,calendar_view_rows[0].find_elements_by_tag_name("th")[-1].text)
+
         self.assertEqual(len(match_invitations),1)
 
         # Check if an acceptance box is present
-        buttons = match_invitations[0].find_elements_by_tag_name("button")
-        self.assertEqual(len(buttons),2)
+        button_container = match_invitations[0].find_element_by_class_name("confirm-container")
+
+        # User sees two links inside them
+        links = button_container.find_elements_by_tag_name("a")
+        self.assertEqual(len(links),2)
 
         # Check if buttons are with the right labels
-        self.assertEqual(buttons[0].text,"Yes")
-        self.assertEqual(buttons[1].text,"No")
+        self.assertEqual(links[0].find_element_by_tag_name("i").text,"done")
+        self.assertEqual(links[1].find_element_by_tag_name("i").text,"clear")
+
+        # User clicks "yes" button
+
+        # Wait some time for page to update
+
+        # Sees that buttons are gone
+
+        # Clicks on match page
+
+        # Sees his name on the "confirmed" list
+
+class CalendarTest(LiveServerTestCase):
+
+    def setUp(self):
+        self.browser = webdriver.Firefox()
+        self.browser.implicitly_wait(0.5)
+
+        # Create a user
+        self.user_1 = PlayerFactory()
+        self.user_1.user.set_password("123456")
+        self.user_1.user.save()
+
+        self.user_2 = PlayerFactory()
+        self.user_2.user.set_password("123456")
+        self.user_2.user.save()
+
+        # Create groups
+        self.group_public = self.user_1.create_group("Public Group",public = True)
+        self.group_private = self.user_1.create_group("Private Group",public = False)
+        self.user_2.join_group(self.group_public)
+
+        self.user_1.schedule_match(group_public,
+                                            date=timezone.make_aware(datetime.datetime.now()),
+                                            max_participants=15,
+                                            min_participants=10,
+                                            price=Decimal("20.0")
+        )
+
+        self.user_1.schedule_match(group_public,
+                                            date=timezone.make_aware(datetime.datetime.now() + datetime.timedelta(weeks=1)),
+                                            max_participants=15,
+                                            min_participants=10,
+                                            price=Decimal("20.0")
+        )
+
+    def tearDown(self):
+        self.browser.quit()

@@ -44,6 +44,8 @@ INSTALLED_APPS = (
 
 )
 
+SWINGTIME_SETTINGS_MODULE = 'swingtime_settings'
+
 MIDDLEWARE_CLASSES = (
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -68,7 +70,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                'django.core.context_processors.media'
+                'django.core.context_processors.media',
             ],
         },
     },
