@@ -166,7 +166,21 @@ class GroupTest(TestCase):
         membership_list = Membership.objects.filter(member__pk=user_1.pk)
         self.assertEqual(len(membership_list),2)
 
+    def test_user_is_marked_as_admin_after_creating_group(self):
+        user_1 = PlayerFactory()
+        group_1 = user_1.create_group("Group 1", public=True)
 
+        membership_list = Membership.objects.filter(member__pk=user_1.pk, group__pk=group_1.pk)
+        self.assertEqual(membership_list[0].role,Membership.GROUP_ADMIN)
+
+    def test_user_is_not_marked_as_admin_after_joining_group(self):
+        user_1 = PlayerFactory()
+        user_2 = PlayerFactory()
+        group_1 = user_1.create_group("Group 1", public=True)
+        user_2.join_group(group_1)
+
+        membership_list = Membership.objects.filter(member__pk=user_2.pk, group__pk=group_1.pk)
+        self.assertNotEqual(membership_list[0].role,Membership.GROUP_ADMIN)
 
 class RegistrationTest(TestCase):
 
