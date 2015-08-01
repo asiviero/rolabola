@@ -117,11 +117,14 @@ class PlayerForm(ModelForm):
 class UserForm(UserCreationForm):
     class Meta:
         model = User
-        fields = ['username','first_name','last_name','email','password1','password2']
+        fields = ['email','first_name','last_name','password1','password2']
 
+    def clean_user_name( self ):
+            email = self.cleaned_data['email']
+            return email
     def save(self, commit=True):
         user = super(UserForm, self).save(commit=False)
-        user.user_name = self.cleaned_data["first_name"]
+        user.username = self.cleaned_data["email"]
         user.first_name = self.cleaned_data["first_name"]
         user.last_name = self.cleaned_data["last_name"]
         user.email = self.cleaned_data["email"]

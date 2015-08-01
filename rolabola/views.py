@@ -49,7 +49,7 @@ def login_and_register(request):
             form_player = PlayerForm(request.POST)
             if form.is_valid() and form_player.is_valid():
                 new_user = form.save()
-                username = request.POST.get('username')
+                username = request.POST.get('email')
                 password = request.POST.get('password1')
 
                 # Player

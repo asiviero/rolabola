@@ -34,7 +34,6 @@ class NewVisitorTest(StaticLiveServerTestCase):
 
         # User has no login yet, so he proceeds to fill the registration
         form_registration.find_element_by_id("id_nickname").send_keys("Nickname")
-        form_registration.find_element_by_id("id_username").send_keys("username")
         form_registration.find_element_by_id("id_first_name").send_keys("First Name")
         form_registration.find_element_by_id("id_last_name").send_keys("Last Name")
         form_registration.find_element_by_id("id_email").send_keys("email@email.com")
@@ -57,7 +56,7 @@ class NewVisitorTest(StaticLiveServerTestCase):
         form_registration = self.browser.find_element_by_id('form_registration')
 
         # User fills his login info
-        form_login.find_element_by_id("id_username").send_keys(self.user_1.user.username)
+        form_login.find_element_by_id("id_username").send_keys(self.user_1.user.email)
         form_login.find_element_by_id("id_password").send_keys("123456")
 
         # User hits the submit button and waits for success
@@ -90,7 +89,7 @@ class NewVisitorTest(StaticLiveServerTestCase):
 
         # User fills his login info
         # User fills his login info
-        form_login.find_element_by_id("id_username").send_keys(self.user_1.user.username)
+        form_login.find_element_by_id("id_username").send_keys(self.user_1.user.email)
         form_login.find_element_by_id("id_password").send_keys("123456")
 
         # User hits the submit button and waits for success
