@@ -277,7 +277,7 @@ class GroupTest(StaticLiveServerTestCase):
         # User doesn't see a Join link anymore
         self.assertNotIn("Join",self.browser.find_element_by_class_name("side-pane").text)
 
-        self.browser.get("%s/accounts/logout" % self.live_server_url)
+        self.browser.get("%s/logout" % self.live_server_url)
         self.browser.get(self.live_server_url)
 
         form_login = self.browser.find_element_by_id('form_login')
