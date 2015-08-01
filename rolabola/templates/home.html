@@ -14,7 +14,9 @@
     </div>
   </div>
   <div id="group-list-wrapper">
-
+    <a id="btn-new-group" class="btn-floating btn-small green" href="{% url 'group-create' %}">
+      <i class="material-icons">add</i>
+    </a>
     <ul>
       {% for membership in user.player.membership_set.all %}
         <li><a href="{% url 'Group' membership.group.id %}">{{ membership.group.name }}</a></li>

@@ -205,11 +205,15 @@ class GroupTest(StaticLiveServerTestCase):
         form_login.find_element_by_id("id_password").send_keys("123456")
         form_login.find_element_by_css_selector("input[type='submit']").click()
 
+        # User sees a plus button in the side pane, close to the group list
+        side_pane = self.browser.find_element_by_class_name('side-pane')
+        group_list_wrapper = side_pane.find_element_by_id("group-list-wrapper")
+        add_group_button = group_list_wrapper.find_element_by_css_selector("a#btn-new-group i.material-icons")
+        self.assertEqual(add_group_button.text,"add")
+        add_group_button.click()
+
         # User clicks in create new group
         time.sleep(1)
-        self.browser.find_element_by_link_text("Create Group").click()
-        time.sleep(1)
-
         self.assertEqual(self.browser.current_url,"%s/group/create" % self.live_server_url)
 
         form_group_creation = self.browser.find_element_by_id("form-group-creation")
