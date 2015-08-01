@@ -27,9 +27,6 @@ def home(request):
     for match_invitation in match_invitations_in_week:
         match_invitations.get(match_invitation.match.date.day).append(match_invitation)
 
-    print(match_invitations)
-    print([{"date":x,"label":x.strftime("%a"),"matches":match_invitations.get(x.day)} for x in dates])
-    #date_labeled
     return render(request, "home.html", {
         "search_form" : SearchForm,
         "dates": [{"date":x,"label":x.strftime("%a"),"matches":match_invitations.get(x.day)} for x in dates],
