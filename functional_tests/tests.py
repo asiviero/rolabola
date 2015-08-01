@@ -3,13 +3,13 @@ from selenium.webdriver.common.keys import Keys
 from django.test import LiveServerTestCase, RequestFactory
 from django.contrib.auth import authenticate
 from django.test import Client
-
+from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from rolabola.factories import *
 import datetime
 import dateutil
 import time
 
-class NewVisitorTest(LiveServerTestCase):
+class NewVisitorTest(StaticLiveServerTestCase):
 
     user_1 = None
     def setUp(self):
@@ -107,7 +107,7 @@ class NewVisitorTest(LiveServerTestCase):
 
         pass
 
-class SearchTest(LiveServerTestCase):
+class SearchTest(StaticLiveServerTestCase):
 
     user_1 = None
     user_2 = None
@@ -169,7 +169,7 @@ class SearchTest(LiveServerTestCase):
         self.assertRegexpMatches(redirected_url, "search/*")
         self.assertIn(self.group_1.name,self.browser.find_element_by_class_name("main-content").text)
 
-class GroupTest(LiveServerTestCase):
+class GroupTest(StaticLiveServerTestCase):
 
     user_1 = None
     user_2 = None
@@ -321,7 +321,7 @@ class GroupTest(LiveServerTestCase):
         self.assertEqual(count,len(self.browser.find_element_by_id("member-list")
                                                     .find_elements_by_tag_name("li")))
 
-class MatchTest(LiveServerTestCase):
+class MatchTest(StaticLiveServerTestCase):
 
     def setUp(self):
         self.browser = webdriver.Firefox()
@@ -471,7 +471,7 @@ class MatchTest(LiveServerTestCase):
 
         # Sees his name on the "confirmed" list
 
-class CalendarTest(LiveServerTestCase):
+class CalendarTest(StaticLiveServerTestCase):
 
     def setUp(self):
         self.browser = webdriver.Firefox()
