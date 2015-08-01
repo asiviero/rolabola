@@ -1,12 +1,15 @@
-{% extends "base.html" %}
+{% extends "baserb.html" %}
 {% block side_pane_block %}
   <div id="personal-info" class="row">
     <div class="col m3">
-      <img class="img-profile responsive-img circle" src="{{ user.player.picture }}" />
+      <img class="img-profile responsive-img circle" src="{{ user.player.fetch_picture }}" />
     </div>
     <div class="col m9">
       <h2>
-        {{user.first_name}} {{user.last_name}} <span class="nickname">({{user.player.nickname}})</span>
+        {{user.first_name}} {{user.last_name}}
+        {% if user.player.nickname %}
+          <span class="nickname">({{user.player.nickname}})</span>
+        {% endif %}
       </h2>
     </div>
   </div>

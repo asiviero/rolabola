@@ -9,3 +9,4 @@ pip3 install fake-factory
 pip3 install Pillow
 pip3 install django-material
 pip3 install python-dateutil
+pip3 install django-allauth

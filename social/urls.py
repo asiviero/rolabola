@@ -12,7 +12,7 @@ urlpatterns = [
     # url(r'^blog/', include('blog.urls')),
 
     url(r'^admin/', include(admin.site.urls)),
-    url(r'^accounts/', include('django.contrib.auth.urls')),
+    url(r'^accounts/', include('allauth.urls')),
     url(r'^$', views.home, name="home"),
     url(r'^login/$', views.login_and_register),
     url(r'^logout/$', auth_views.logout_then_login),

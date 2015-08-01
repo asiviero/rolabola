@@ -5,6 +5,8 @@ from django.forms import ModelForm
 from django.db.models import Q
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from allauth.socialaccount.models import SocialAccount
+
 #import os
 #from social import settings
 #from rolabola.signals import *
@@ -22,6 +24,12 @@ class Player(models.Model):
                                                                         through_fields=('user_to','user_from'),
                                                                         symmetrical=False,
                                                                         related_name = 'request_list')
+
+    def fetch_picture(self):
+        fb_uid = SocialAccount.objects.filter(user_id=self.user.id, provider='facebook')
+        if len(fb_uid):
+            return "http://graph.facebook.com/{}/picture".format(fb_uid[0].uid)
+        return self.picture
 
     def __unicode__(self):
         return u"%s %s (%s)" % (self.user.first_name,self.user.last_name,self.nickname)
@@ -97,6 +105,9 @@ class Player(models.Model):
                 match.matchinvitation_set.get(player__pk=self.id).confirm_presence()
         except MatchInvitation.DoesNotExist as e:
             pass
+
+User.player = property(lambda u: Player.objects.get_or_create(user=u)[0])
+
 
 class PlayerForm(ModelForm):
     class Meta:
