@@ -7,4 +7,5 @@ pip3 install --upgrade selenium
 pip3 install factory_boy
 pip3 install fake-factory
 pip3 install Pillow
-pip3 install django-material 
+pip3 install django-material
+pip3 install python-dateutil
