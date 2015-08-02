@@ -19,6 +19,7 @@ class UserFactory(factory.DjangoModelFactory):
     last_name = factory.LazyAttribute(lambda o: faker.last_name())
     email = factory.LazyAttribute(lambda a: '{0}.{1}@example.com'.format(a.first_name, a.last_name).lower())
     username = email
+    password = factory.PostGenerationMethodCall('set_password', '123456')
 
 class PlayerFactory(factory.DjangoModelFactory):
     class Meta:

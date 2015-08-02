@@ -182,6 +182,34 @@ class GroupTest(TestCase):
         membership_list = Membership.objects.filter(member__pk=user_2.pk, group__pk=group_1.pk)
         self.assertNotEqual(membership_list[0].role,Membership.GROUP_ADMIN)
 
+    def test_admin_can_set_group_as_private(self):
+        user_1 = PlayerFactory()
+        user_2 = PlayerFactory()
+        group_1 = user_1.create_group("Group 1", public=True)
+        c = Client()
+        c.post("/login/",{"username":user_1.user.email,"password":"123456","form":"login_form"})
+
+        response = c.get("/group/%d/private" % group_1.pk)
+        self.assertEqual(response.status_code,200)
+
+        # Reload the object
+        group_1 = Group.objects.get(pk=group_1.pk)
+        self.assertEqual(group_1.public,False)
+
+    def test_non_admin_cant_set_group_as_private(self):
+        user_1 = PlayerFactory()
+        user_2 = PlayerFactory()
+        group_1 = user_1.create_group("Group 1", public=True)
+        c = Client()
+        c.post("/login/",{"username":user_2.user.email,"password":"123456","form":"login_form"})
+
+        response = c.get("/group/%d/private" % group_1.pk)
+        self.assertEqual(response.status_code,403)
+
+        # Reload the object
+        group_1 = Group.objects.get(pk=group_1.pk)
+        self.assertEqual(group_1.public,True)
+
 class RegistrationTest(TestCase):
 
     def test_user_gets_redirected_on_home(self):

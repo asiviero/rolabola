@@ -1,16 +1,19 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.core.urlresolvers import reverse
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.models import User
 from django.forms.models import inlineformset_factory
 from rolabola.models import *
 from rolabola.forms import SearchForm
+from rolabola.decorators import *
 from django.db.models import Q
+from django.http import HttpResponse, JsonResponse, HttpResponseForbidden
 import urllib
 import datetime
 import dateutil.relativedelta
+import json
 
 # Create your views here.
 @login_required
@@ -43,7 +46,9 @@ def login_and_register(request):
             if user is not None:
                 if user.is_active:
                     login(request,user)
-                    return redirect(request.POST.get('next'))
+                    if request.POST.get('next') :
+                        return redirect(request.POST.get('next'))
+                    return redirect(reverse("home"))
         elif request.POST.get("form") == "user_creation_form":
             form = UserForm(request.POST)
             form_player = PlayerForm(request.POST)
@@ -108,6 +113,18 @@ def group_join(request,group):
     group = get_object_or_404(Group, pk=group)
     request.user.player.join_group(group)
     return redirect(reverse("Group",args=(group.id,)))
+
+@login_required
+@group_admin_required
+def group_make_private(request,group):
+    group = get_object_or_404(Group, pk=group)
+    group.public = not group.public
+    group.save()
+    response = JsonResponse({
+        "message" : "Group status changed to %s" % ("Public" if group.public else "Private")
+    })
+    response.status_code = 200
+    return response
 
 @login_required
 def group_accept_request(request,group,player):
