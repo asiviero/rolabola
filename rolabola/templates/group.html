@@ -7,6 +7,12 @@
   {% if is_admin %}
     <a href="{% url 'group-match-create' group.id %}">New Match</a>
   {% endif %}
+  <div class="public-wrapper">
+    {{ is_admin }}
+    <input type="checkbox" id="checkbox-public-group" data-group="{{ group.pk }}"
+      {{ group.public|yesno:'checked="checked", ' }} {{ is_admin|yesno:' ,disabled="disabled"' }}/>
+    <label for="checkbox-public-group">Public</label>
+  </div>
   <div id="member-pending-list">
     <ul>
       {% for member_request in request_list %}

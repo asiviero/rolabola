@@ -8,6 +8,7 @@ from django.forms.models import inlineformset_factory
 from rolabola.models import *
 from rolabola.forms import SearchForm
 from rolabola.decorators import *
+from django_ajax.decorators import ajax
 from django.db.models import Q
 from django.http import HttpResponse, JsonResponse, HttpResponseForbidden
 import urllib
@@ -114,6 +115,7 @@ def group_join(request,group):
     request.user.player.join_group(group)
     return redirect(reverse("Group",args=(group.id,)))
 
+@ajax
 @login_required
 @group_admin_required
 def group_make_private(request,group):

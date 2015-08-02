@@ -47,6 +47,7 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rolabola',
+    'django_ajax'
 )
 
 LOGIN_REDIRECT_URL = '/'

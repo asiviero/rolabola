@@ -324,6 +324,57 @@ class GroupTest(StaticLiveServerTestCase):
         self.assertEqual(count,len(self.browser.find_element_by_id("member-list")
                                                     .find_elements_by_tag_name("li")))
 
+    def test_admin_can_set_group_as_private(self):
+        self.browser.get(self.live_server_url)
+
+        form_login = self.browser.find_element_by_id('form_login')
+        form_login.find_element_by_id("id_username").send_keys(self.user_1.user.username)
+        form_login.find_element_by_id("id_password").send_keys("123456")
+        form_login.find_element_by_css_selector("input[type='submit']").click()
+
+        # User goes to group url
+        self.browser.get("%s/group/%d/" % (self.live_server_url,self.group_public.id))
+
+        # In the side pane, user sees a checkbox with regarding group status
+        side_pane = self.browser.find_element_by_class_name('side-pane')
+        checkbox = side_pane.find_element_by_class_name("public-wrapper").find_element_by_tag_name("input")
+        self.assertEqual(checkbox.is_enabled(),True)
+        self.assertEqual(checkbox.get_attribute("checked"),"true")
+
+        label = side_pane.find_element_by_class_name("public-wrapper").find_element_by_tag_name("label")
+        label.click()
+
+
+        # Reload group object
+        time.sleep(1)
+        group = Group.objects.get(pk=self.group_public.pk)
+        self.assertEqual(group.public,False)
+
+    def test_non_admin_cant_set_group_as_private(self):
+
+        self.browser.get(self.live_server_url)
+
+        form_login = self.browser.find_element_by_id('form_login')
+        form_login.find_element_by_id("id_username").send_keys(self.user_2.user.username)
+        form_login.find_element_by_id("id_password").send_keys("123456")
+        form_login.find_element_by_css_selector("input[type='submit']").click()
+
+        # User goes to group url
+        self.browser.get("%s/group/%d/" % (self.live_server_url,self.group_public.id))
+
+        # In the side pane, user sees a checkbox with regarding group status
+        side_pane = self.browser.find_element_by_class_name('side-pane')
+        checkbox = side_pane.find_element_by_class_name("public-wrapper").find_element_by_tag_name("input")
+        self.assertEqual(checkbox.is_enabled(),False)
+
+        label = side_pane.find_element_by_class_name("public-wrapper").find_element_by_tag_name("label")
+        label.click()
+        time.sleep(1)
+
+        # Reload group object
+        group = Group.objects.get(pk=self.group_public.pk)
+        self.assertEqual(group.public,True)
+
 class MatchTest(StaticLiveServerTestCase):
 
     def setUp(self):
