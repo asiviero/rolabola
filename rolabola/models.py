@@ -86,7 +86,8 @@ class Player(models.Model):
         return group
 
     def accept_request_group(self,group,user):
-        if Membership.objects.filter(member__pk=self.id,role=Membership.GROUP_ADMIN).count() and MembershipRequest.objects.filter(group__pk=group.id,member__pk=user.id).count():
+        if Membership.objects.filter(member__pk=self.id,group__pk=group.pk,role=Membership.GROUP_ADMIN).count() \
+        and MembershipRequest.objects.filter(group__pk=group.id,member__pk=user.id).count():
             MembershipRequest.objects.get(group__pk=group.id,member__pk=user.id).accept()
 
     def schedule_match(self,group,date,max_participants,min_participants,price):

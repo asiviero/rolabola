@@ -240,7 +240,18 @@ class GroupTest(TestCase):
         group_1 = Group.objects.get(pk=group_1.pk)
         self.assertEqual(group_1.public,True)
 
-    #def test_user_cant_accept_in_group_not_managed(self):
+    def test_user_cant_accept_in_group_not_managed(self):
+        user_1 = PlayerFactory()
+        user_2 = PlayerFactory()
+        user_3 = PlayerFactory()
+
+        group_1 = user_1.create_group("Group 1", public=False)
+        group_2 = user_3.create_group("Group 2", public=False)
+
+        user_2.join_group(group_1)
+        user_3.accept_request_group(group=group_1,user=user_2)
+
+        self.assertEqual(len(group_1.member_list.all()),1)
 
 class RegistrationTest(TestCase):
 
