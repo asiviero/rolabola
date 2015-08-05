@@ -253,6 +253,31 @@ class GroupTest(TestCase):
 
         self.assertEqual(len(group_1.member_list.all()),1)
 
+    def test_retrieve_membership_requests(self):
+        user_1 = PlayerFactory()
+        user_2 = PlayerFactory()
+        user_3 = PlayerFactory()
+        user_4 = PlayerFactory()
+
+        group_1 = user_1.create_group("Group 1", public=False)
+        group_2 = user_1.create_group("Group 2", public=False)
+
+        user_2.join_group(group_1)
+        user_3.join_group(group_1)
+        user_4.join_group(group_2)
+
+        # Retrieves list of membership requests
+        membership_requests = user_1.get_membership_requests_for_managed_groups()
+        self.assertEqual(len(membership_requests),3)
+
+        # Retrieves filtered version
+        membership_requests = user_1.get_membership_requests_for_managed_groups(group=group_1)
+        self.assertEqual(len(membership_requests),2)
+
+        membership_requests = user_1.get_membership_requests_for_managed_groups(group=group_2)
+        self.assertEqual(len(membership_requests),1)
+
+
 class RegistrationTest(TestCase):
 
     def test_user_gets_redirected_on_home(self):

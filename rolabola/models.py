@@ -90,6 +90,15 @@ class Player(models.Model):
         and MembershipRequest.objects.filter(group__pk=group.id,member__pk=user.id).count():
             MembershipRequest.objects.get(group__pk=group.id,member__pk=user.id).accept()
 
+    def get_membership_requests_for_managed_groups(self,group=None):
+        if group is None:
+            admin_membership_list = Membership.objects.filter(member__pk=self.id,role=Membership.GROUP_ADMIN)
+            group_list = [x.group.pk for x in admin_membership_list]
+        else:
+            group_list = [group.pk]
+        return MembershipRequest.objects.filter(
+            group__pk__in=group_list
+        )
     def schedule_match(self,group,date,max_participants,min_participants,price):
         if Membership.objects.filter(member__pk=self.id,role=Membership.GROUP_ADMIN).count():
             return Match.objects.create(
