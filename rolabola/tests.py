@@ -155,6 +155,35 @@ class GroupTest(TestCase):
         # Check if Group member_list was not updated
         self.assertEqual(len(group_1.member_list.all()),1)
 
+    def test_user_cant_join_group_more_than_once(self):
+        user_1 = PlayerFactory()
+        user_2 = PlayerFactory()
+        group_1 = user_2.create_group("Group 1", public=True)
+        group_2 = user_2.create_group("Group 1", public=False)
+
+        user_1.join_group(group_1)
+        user_1.join_group(group_1)
+        self.assertEqual(len(group_1.member_list.all()),2)
+
+        user_1.join_group(group_2)
+        user_1.join_group(group_2)
+
+        # Check if a single MembershipRequest was created
+        membership_request_list = MembershipRequest.objects.all()
+        self.assertEqual(len(membership_request_list),1)
+
+        user_2.accept_request_group(group=group_2,user=user_1)
+        user_2.accept_request_group(group=group_2,user=user_1)
+
+        # Check if a membership was created
+        membership_list = Membership.objects.all()
+        self.assertEqual(len(membership_list),4)
+
+        # Check if Group member_list was updated
+        self.assertEqual(len(group_1.member_list.all()),2)
+
+
+
     def test_user_can_join_multiple_groups(self):
         user_1 = PlayerFactory()
         user_2 = PlayerFactory()
@@ -189,7 +218,8 @@ class GroupTest(TestCase):
         c = Client()
         c.post("/login/",{"username":user_1.user.email,"password":"123456","form":"login_form"})
 
-        response = c.get("/group/%d/private" % group_1.pk)
+        print("/group/%d/private" % group_1.pk)
+        response = c.post("/group/%d/private" % group_1.pk,{},HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         self.assertEqual(response.status_code,200)
 
         # Reload the object
@@ -203,12 +233,14 @@ class GroupTest(TestCase):
         c = Client()
         c.post("/login/",{"username":user_2.user.email,"password":"123456","form":"login_form"})
 
-        response = c.get("/group/%d/private" % group_1.pk)
+        response = c.post("/group/%d/private" % group_1.pk,{},HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         self.assertEqual(response.status_code,403)
 
         # Reload the object
         group_1 = Group.objects.get(pk=group_1.pk)
         self.assertEqual(group_1.public,True)
+
+    #def test_user_cant_accept_in_group_not_managed(self):
 
 class RegistrationTest(TestCase):
 

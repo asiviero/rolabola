@@ -115,9 +115,9 @@ def group_join(request,group):
     request.user.player.join_group(group)
     return redirect(reverse("Group",args=(group.id,)))
 
-@ajax
-@login_required
 @group_admin_required
+@login_required
+@ajax
 def group_make_private(request,group):
     group = get_object_or_404(Group, pk=group)
     group.public = not group.public
