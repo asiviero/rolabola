@@ -218,7 +218,6 @@ class GroupTest(TestCase):
         c = Client()
         c.post("/login/",{"username":user_1.user.email,"password":"123456","form":"login_form"})
 
-        print("/group/%d/private" % group_1.pk)
         response = c.post("/group/%d/private" % group_1.pk,{},HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         self.assertEqual(response.status_code,200)
 
