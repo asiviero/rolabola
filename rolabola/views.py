@@ -88,9 +88,10 @@ def search(request):
         results = Group.objects.filter(
             Q(name__icontains=request.GET.get("name"))
         )
+
         results = [{"res":x,
-                          "member":x.member_list.filter(pk=request.user.player.pk).exists(),
-                          "membership_requested":x.member_pending_list.filter(pk=request.user.player.pk).exists()
+                          "member":False if request.user.is_anonymous() else x.member_list.filter(pk=request.user.player.pk).exists() ,
+                          "membership_requested":False if request.user.is_anonymous() else x.member_pending_list.filter(pk=request.user.player.pk).exists()
                         } for x in results]
     return render(request, "search_results.html", {
         "model" : request.GET.get("qtype"),
