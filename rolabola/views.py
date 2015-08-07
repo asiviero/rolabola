@@ -88,6 +88,10 @@ def search(request):
         results = Group.objects.filter(
             Q(name__icontains=request.GET.get("name"))
         )
+        results = [{"res":x,
+                          "member":x.member_list.filter(pk=request.user.player.pk).exists(),
+                          "membership_requested":x.member_pending_list.filter(pk=request.user.player.pk).exists()
+                        } for x in results]
     return render(request, "search_results.html", {
         "model" : request.GET.get("qtype"),
         "name_query" : urllib.parse.urlencode({"name":request.GET.get("name")}),
@@ -110,10 +114,14 @@ def group(request,group):
     })
 
 @login_required
+@ajax
 def group_join(request,group):
     group = get_object_or_404(Group, pk=group)
-    request.user.player.join_group(group)
-    return redirect(reverse("Group",args=(group.id,)))
+    membership_or_request = request.user.player.join_group(group)
+    response = {
+        "membership" : str(isinstance(membership_or_request,Membership)).lower()
+    }
+    return response
 
 @group_admin_required
 @login_required
@@ -140,7 +148,6 @@ def group_create(request):
     if request.method == 'POST':
         group_form = GroupForm(request.POST, request.FILES)
         if group_form.is_valid():
-            print(request.FILES)
             group = group_form.save(commit = False)
             group = request.user.player.create_group(name=group.name,public=group.public,picture=group.picture)
             return redirect(reverse("Group", args=(group.id,)))
@@ -153,7 +160,6 @@ def group_match_create(request,group):
     if request.method == 'POST':
         group_match_create_form = MatchForm(request.POST)
         if group_match_create_form.is_valid():
-            print(group_match_create_form.is_valid())
             match = request.user.player.schedule_match(
                 group=get_object_or_404(Group,pk=group),
                 date=group_match_create_form.cleaned_data["date"],

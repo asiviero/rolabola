@@ -6,12 +6,26 @@
   </ul>
 {% endblock %}
 {% block main_content_block %}
+  <ul class="{{ model|lower }}-search-results">
   {% for result in results %}
-    {% if model == "User" %}
-      {{ result.first_name }} {{ result.last_name }} ({{ result.player.nickname }})
-    {% endif %}
-    {% if model == "Group" %}
-      {{ result.name }}
-    {% endif %}
+    <li>
+      {% if model == "User" %}
+        {{ result.first_name }} {{ result.last_name }} ({{ result.player.nickname }})
+      {% endif %}
+      {% if model == "Group" %}
+        <div class="img-wrapper col s3">
+          <img class="group-icon responsive-img circle" src="{{ MEDIA_URL}}{{ result.res.picture }}" />
+        </div>
+        <div class="group-info-wrapper col s9">
+          <a href="{% url 'Group' result.res.id %}" class="group-name">{{ result.res.name }}</a>
+          {% if not result.member %}
+          <a class="btn-floating {{ result.membership_requested|yesno:'disabled,blue' }} btn-small btn-join-group" data-group="{{result.res.id}}">
+            <i class="material-icons">group add</i>
+          </a>
+          {% endif %}
+        </div>
+      {% endif %}
+    </li>
   {% endfor %}
+</ul>
 {% endblock %}

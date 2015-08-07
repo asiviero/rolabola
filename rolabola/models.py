@@ -60,14 +60,14 @@ class Player(models.Model):
         if group.public:
             # Check if a membership object exists
             if not Membership.objects.filter(member__pk=self.id,group__pk=group.id).count():
-                Membership.objects.create(
+                return Membership.objects.create(
                     member = self,
                     group = group
                 )
         else:
             # Check if a membershiprequest object exists
             if not MembershipRequest.objects.filter(member__pk=self.id,group__pk=group.id).count():
-                MembershipRequest.objects.create(
+                return MembershipRequest.objects.create(
                     member = self,
                     group = group
                 )
