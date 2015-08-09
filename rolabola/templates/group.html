@@ -2,13 +2,13 @@
 {% block side_pane_block %}
   <h2>{{ group.name }}</h2>
   {% if not user_in_group and not user_requested_membership %}
-    <a class="waves-effect waves-light btn btn-join-group blue" data-group="{{ group.id }}">
+    <a class="waves-effect waves-light btn btn-join-group blue" data-url="{% url 'group-join' group.pk %}">
       <i class="material-icons left">group add</i>
       join
       </a>
   {% endif %}
   {% if user_requested_membership %}
-    <a class="waves-effect waves-light btn btn-join-group disabled" data-group="{{ group.id }}">
+    <a class="waves-effect waves-light btn btn-join-group disabled" data-url="{% url 'group-join' group.pk %}">
       membership requested
     </a>
   {% endif %}

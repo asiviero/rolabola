@@ -19,7 +19,8 @@
         <div class="group-info-wrapper col s9">
           <a href="{% url 'Group' result.res.id %}" class="group-name">{{ result.res.name }}</a>
           {% if not result.member %}
-          <a class="btn-floating {{ result.membership_requested|yesno:'disabled,blue' }} btn-small btn-join-group" data-group="{{result.res.id}}">
+          <a class="btn-floating {{ result.membership_requested|yesno:'disabled,blue' }} btn-small btn-join-group"
+              data-url="{% url 'group-join' result.res.pk %}">
             <i class="material-icons">group add</i>
           </a>
           {% endif %}

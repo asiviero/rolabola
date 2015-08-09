@@ -132,6 +132,10 @@ def group_join(request,group):
         response["append-fragments"] = {
             "#member-list ul" : "<li>%s %s (%s)</li>" % (request.user.first_name,request.user.last_name,request.user.player.nickname)
         }
+    else:
+        if not "search" in request.META.get("HTTP_REFERER"):
+            response["replace_string"] = "membership requested"
+    print(response)
     return response
 
 @group_admin_required

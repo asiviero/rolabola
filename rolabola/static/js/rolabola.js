@@ -10,7 +10,7 @@
 
     $(".btn-join-group").click(function() {
       var button = $(this)
-      var url = "/group/" + $(this).data("group") + "/join"
+      var url = $(this).data("url")
       ajaxGet(url, function(content){
         if(content.membership == "true") {
           button.remove()
@@ -18,8 +18,8 @@
           button.removeClass("blue")
           button.addClass("disabled")
           // If not in search page, change the label
-          if(window.location.pathname.indexOf("search") == -1) {
-            button.html("membership requested")
+          if("replace_string" in content) {
+            button.html(content["replace_string"])
           }
         }
       })
