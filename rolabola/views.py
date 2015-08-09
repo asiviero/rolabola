@@ -119,9 +119,14 @@ def group(request,group):
 def group_join(request,group):
     group = get_object_or_404(Group, pk=group)
     membership_or_request = request.user.player.join_group(group)
+    is_membership = isinstance(membership_or_request,Membership)
     response = {
-        "membership" : str(isinstance(membership_or_request,Membership)).lower()
+        "membership" : str(is_membership).lower()
     }
+    if is_membership :
+        response["append-fragments"] = {
+            "#member-list ul" : "<li>%s %s (%s)</li>" % (request.user.first_name,request.user.last_name,request.user.player.nickname)
+        }
     return response
 
 @group_admin_required

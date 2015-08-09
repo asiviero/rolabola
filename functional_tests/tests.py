@@ -315,8 +315,6 @@ class GroupTest(StaticLiveServerTestCase):
         self.assertEqual(len(self.browser.find_element_by_id("member-list")
                                                     .find_elements_by_tag_name("li")),1)
 
-    """ These tests will change, so I'm commenting them for now """
-    """
     def test_user_can_join_public_group(self):
 
         self.browser.get(self.live_server_url)
@@ -329,13 +327,16 @@ class GroupTest(StaticLiveServerTestCase):
         # User enters the desired group url
         self.browser.get("%s/group/%d/" % (self.live_server_url,self.group_public.id))
 
-        # User clicks in "Join"
-        self.browser.find_element_by_link_text("Join").click()
+        # User clicks the join button
+        side_pane = self.browser.find_element_by_class_name('side-pane')
+        button = side_pane.find_element_by_css_selector("a.btn-join-group")
+        self.assertIn("JOIN",button.text)
+        button.click()
         time.sleep(1)
-
         # User now sees his name on the member list
         self.assertIn(self.user_2.user.first_name,self.browser.find_element_by_id("member-list").text)
 
+    """
     def test_user_can_join_private_group(self):
 
         self.browser.get(self.live_server_url)
