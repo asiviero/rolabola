@@ -103,13 +103,14 @@ def search(request):
 def group(request,group):
     group = get_object_or_404(Group, pk=group)
 
-    user_in_group = group.member_list.filter(pk=request.user.player.id).count() != 0 or \
-        group.member_pending_list.count() != 0
+    user_in_group = group.member_list.filter(pk=request.user.player.id).count() != 0
+    user_requested_membership = group.member_pending_list.filter(pk=request.user.player.id).count() != 0
     is_admin = request.user.player in group.member_list.filter(membership__role=Membership.GROUP_ADMIN)
     #group.member_pending_list.all()
     return render(request, "group.html", {
         "group":group,
         "user_in_group":user_in_group,
+        "user_requested_membership":user_requested_membership,
         "request_list":group.member_pending_list.all(),
         "is_admin":is_admin
     })

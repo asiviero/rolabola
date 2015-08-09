@@ -275,6 +275,14 @@ class GroupTest(StaticLiveServerTestCase):
         self.group_public = self.user_1.create_group("Public Group",public = True)
         self.group_private = self.user_1.create_group("Private Group",public = False)
 
+        self.group_1 = self.user_2.create_group("%s's Public Group" % (self.user_2.nickname),public=True)
+        self.group_2 = self.user_2.create_group("%s's Private Group" % (self.user_2.nickname),public=False)
+        self.group_3 = self.user_2.create_group("%s's Joined Group" % (self.user_2.nickname),public=True)
+        self.group_4 = self.user_2.create_group("%s's Private Joined Group" % (self.user_2.nickname),public=False)
+        self.user_1.join_group(self.group_3)
+        self.user_1.join_group(self.group_4)
+
+
     def tearDown(self):
         self.browser.quit()
 
@@ -335,6 +343,57 @@ class GroupTest(StaticLiveServerTestCase):
         time.sleep(1)
         # User now sees his name on the member list
         self.assertIn(self.user_2.user.first_name,self.browser.find_element_by_id("member-list").text)
+
+    def test_join_button_behavior_on_group_page(self):
+
+        self.browser.get(self.live_server_url)
+
+        form_login = self.browser.find_element_by_id('form_login')
+        form_login.find_element_by_id("id_username").send_keys(self.user_1.user.username)
+        form_login.find_element_by_id("id_password").send_keys("123456")
+        form_login.find_element_by_css_selector("input[type='submit']").click()
+
+        # First case, public group, not yet joined
+        # Button shows up in page, then disappears
+        self.browser.get("%s/group/%d/" % (self.live_server_url,self.group_1.id))
+
+        # User clicks the join button
+        side_pane = self.browser.find_element_by_class_name('side-pane')
+        button = side_pane.find_element_by_css_selector("a.btn-join-group")
+        self.assertIn("JOIN",button.text)
+        button.click()
+        time.sleep(1)
+        buttons = side_pane.find_elements_by_css_selector("a.btn-join-group")
+        self.assertEqual(len(buttons),0)
+
+        # Second case, private group, not yet joined
+        # Button shows up and turns into a disabled button after click
+        self.browser.get("%s/group/%d/" % (self.live_server_url,self.group_2.id))
+
+        side_pane = self.browser.find_element_by_class_name('side-pane')
+        button = side_pane.find_element_by_css_selector("a.btn-join-group")
+        self.assertIn("JOIN",button.text)
+        button.click()
+        time.sleep(1)
+
+        button = side_pane.find_element_by_css_selector("a.btn-join-group.disabled")
+        self.assertIn("MEMBERSHIP REQUESTED",button.text)
+
+        # Third case, public group, joined (same behavior goes for private groups)
+        # Button isn't present
+        self.browser.get("%s/group/%d/" % (self.live_server_url,self.group_3.id))
+
+        # User clicks the join button
+        side_pane = self.browser.find_element_by_class_name('side-pane')
+        buttons = side_pane.find_elements_by_css_selector("a.btn-join-group")
+        self.assertEqual(len(buttons),0)
+
+        # Fourth case, private group, membership requested
+        # Button disabled by default with message
+        self.browser.get("%s/group/%d/" % (self.live_server_url,self.group_4.id))
+        side_pane = self.browser.find_element_by_class_name('side-pane')
+        button = side_pane.find_element_by_css_selector("a.btn-join-group.disabled")
+        self.assertIn("MEMBERSHIP REQUESTED",button.text)
 
     """
     def test_user_can_join_private_group(self):

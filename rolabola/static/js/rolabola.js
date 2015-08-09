@@ -17,6 +17,10 @@
         } else {
           button.removeClass("blue")
           button.addClass("disabled")
+          // If not in search page, change the label
+          if(window.location.pathname.indexOf("search") == -1) {
+            button.html("membership requested")
+          }
         }
       })
     })

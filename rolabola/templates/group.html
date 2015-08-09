@@ -1,11 +1,16 @@
 {% extends "baserb.html" %}
 {% block side_pane_block %}
   <h2>{{ group.name }}</h2>
-  {% if not user_in_group %}
+  {% if not user_in_group and not user_requested_membership %}
     <a class="waves-effect waves-light btn btn-join-group blue" data-group="{{ group.id }}">
       <i class="material-icons left">group add</i>
       join
       </a>
+  {% endif %}
+  {% if user_requested_membership %}
+    <a class="waves-effect waves-light btn btn-join-group disabled" data-group="{{ group.id }}">
+      membership requested
+    </a>
   {% endif %}
   {% if is_admin %}
     <a href="{% url 'group-match-create' group.id %}">New Match</a>
