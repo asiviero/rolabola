@@ -563,7 +563,7 @@ class MatchTest(StaticLiveServerTestCase):
 
         # User fills the form with data on date, price, max and min people
         form_match = self.browser.find_element_by_id("form-group-match-creation")
-        form_match.find_element_by_id("id_date").send_keys(datetime.date.today().strftime("%m/%d/%Y"))
+        form_match.find_element_by_id("id_date").send_keys(datetime.date.today().strftime("%d/%m/%Y"))
         form_match.find_element_by_id("id_price").send_keys("10")
         form_match.find_element_by_id("id_min_participants").send_keys("10")
         form_match.find_element_by_id("id_max_participants").send_keys("15")

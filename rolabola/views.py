@@ -15,19 +15,23 @@ import urllib
 import datetime
 import dateutil.relativedelta
 import json
+from django.utils import timezone
+
 
 # Create your views here.
 @login_required
 def home(request):
+
     last_sunday = (datetime.date.today()+dateutil.relativedelta.relativedelta(weekday=dateutil.relativedelta.SU(-1)))
     next_saturday = last_sunday + datetime.timedelta(days=6)
     dates = [last_sunday + datetime.timedelta(days=x) for x in range((next_saturday-last_sunday).days + 1)]
     match_invitations_in_week = MatchInvitation.objects.filter(
         player__pk = request.user.player.pk,
-        match__date__gt=last_sunday,
-        match__date__lt=next_saturday
+        match__date__gte=timezone.make_aware(datetime.datetime.combine(last_sunday,datetime.time.min)),
+        match__date__lte=timezone.make_aware(datetime.datetime.combine(next_saturday,datetime.time.max))
     )
     match_invitations = {k:[] for k in [x.day for x in dates]}
+
     for match_invitation in match_invitations_in_week:
         match_invitations.get(match_invitation.match.date.day).append(match_invitation)
 
