@@ -34,6 +34,9 @@ class Player(models.Model):
     def __unicode__(self):
         return u"%s %s (%s)" % (self.user.first_name,self.user.last_name,self.nickname)
 
+    def get_name(self):
+        return u"%s %s (%s)" % (self.user.first_name,self.user.last_name,self.nickname)
+
     def add_user(self,friend,message=""):
 
         # Check if there isn't a FriendshipRequest involving this user or the possible friend
@@ -89,6 +92,11 @@ class Player(models.Model):
         if Membership.objects.filter(member__pk=self.id,group__pk=group.pk,role=Membership.GROUP_ADMIN).count() \
         and MembershipRequest.objects.filter(group__pk=group.id,member__pk=user.id).count():
             MembershipRequest.objects.get(group__pk=group.id,member__pk=user.id).accept()
+
+    def reject_request_group(self,group,user):
+        if Membership.objects.filter(member__pk=self.id,group__pk=group.pk,role=Membership.GROUP_ADMIN).count() \
+        and MembershipRequest.objects.filter(group__pk=group.id,member__pk=user.id).count():
+            MembershipRequest.objects.get(group__pk=group.id,member__pk=user.id).reject()
 
     def get_membership_requests_for_managed_groups(self,group=None):
         if group is None:
@@ -202,7 +210,8 @@ class MembershipRequest(models.Model):
             role = Membership.GROUP_MEMBER
         )
         self.delete()
-
+    def reject(self):
+        self.delete()
 
 def match_post_save(sender, **kwargs):
     if kwargs["created"]:

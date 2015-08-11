@@ -24,6 +24,14 @@
         }
       })
     })
+
+    $(".btn-accept-group,.btn-reject-group").click(function() {
+      var button = $(this)
+      var url = $(this).data("url")
+      ajaxGet(url, function(content){
+        button.closest("li").remove()
+      })
+    })
   })
 
 

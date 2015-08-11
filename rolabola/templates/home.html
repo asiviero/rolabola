@@ -32,6 +32,30 @@
   </form>
 {% endblock %}
 {% block main_content_block %}
+  {% if membership_requests.count %}
+  <div class="membership-requests">
+    <ul>
+      {% for membership_request in membership_requests %}
+        <li>
+          <a href="{% url 'Group' membership_request.group.pk %}" class="group-name">
+            {{ membership_request.group.name }}
+          </a>
+          <a href="#" class="player-name">
+            {{ membership_request.member.get_name }}
+          </a>
+          <div class="confirm-container">
+            <a class="btn-accept-group btn-floating btn-tiny green" data-url="{% url 'group-accept-request' membership_request.group.pk membership_request.member.pk %}">
+              <i class="material-icons">done</i>
+            </a>
+            <a class="btn-reject-group btn-floating btn-tiny red" data-url="{% url 'group-reject-request' membership_request.group.pk membership_request.member.pk %}">
+              <i class="material-icons">clear</i>
+            </a>
+          </div>
+        </li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
   <div id="schedule-box">
     <table class="calendar-table weekly">
       <thead>

@@ -38,7 +38,8 @@ def home(request):
     return render(request, "home.html", {
         "search_form" : SearchForm,
         "dates": [{"date":x,"label":x.strftime("%a"),"matches":match_invitations.get(x.day)} for x in dates],
-        "match_invitations_in_week":match_invitations
+        "match_invitations_in_week":match_invitations,
+        "membership_requests":request.user.player.get_membership_requests_for_managed_groups()
     })
 
 def login_and_register(request):
@@ -151,12 +152,31 @@ def group_make_private(request,group):
     response.status_code = 200
     return response
 
+@group_admin_required
 @login_required
+@ajax
 def group_accept_request(request,group,player):
     group = get_object_or_404(Group, pk=group)
     player = get_object_or_404(Player, pk=player)
     request.user.player.accept_request_group(group,player)
-    return redirect(reverse("Group",args=(group.id,)))
+    response = JsonResponse({
+        "message" : "%s Accepted into group %s" % (player.get_name(),group.name)
+    })
+    response.status_code = 200
+    return response
+
+@group_admin_required
+@login_required
+@ajax
+def group_reject_request(request,group,player):
+    group = get_object_or_404(Group, pk=group)
+    player = get_object_or_404(Player, pk=player)
+    request.user.player.reject_request_group(group,player)
+    response = JsonResponse({
+        "message" : "%s rejected into group %s" % (player.get_name(),group.name)
+    })
+    response.status_code = 200
+    return response
 
 @login_required
 def group_create(request):
