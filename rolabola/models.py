@@ -108,7 +108,7 @@ class Player(models.Model):
             group__pk__in=group_list
         )
     def schedule_match(self,group,date,max_participants,min_participants,price):
-        if Membership.objects.filter(member__pk=self.id,role=Membership.GROUP_ADMIN).count():
+        if Membership.objects.filter(member__pk=self.id,group__pk=group.pk,role=Membership.GROUP_ADMIN).count():
             return Match.objects.create(
                 group=group,
                 date=date,

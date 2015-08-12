@@ -397,7 +397,7 @@ class MatchTest(TestCase):
         # Check if user 4 was not invited
         self.assertEqual(MatchInvitation.objects.filter(player__pk=user_4.id).count(),0)
 
-    def test_admin_user_schedule_match(self):
+    def test_nonadmin_user_cant_schedule_match(self):
         user_1 = PlayerFactory()
         user_2 = PlayerFactory()
         user_3 = PlayerFactory()
@@ -420,7 +420,6 @@ class MatchTest(TestCase):
         # Checks if no match invitations were issued
         self.assertEqual(MatchInvitation.objects.all().count(),0)
 
-
     def test_user_can_accept_match_invitation(self):
         user_1 = PlayerFactory()
         user_2 = PlayerFactory()
@@ -441,3 +440,27 @@ class MatchTest(TestCase):
         user_3.accept_match_invitation(match=match)
 
         self.assertEqual(len(match.get_confirmed_list()),1)
+
+    def test_admin_user_can_schedule_match_only_for_his_own_groups(self):
+        user_1 = PlayerFactory()
+        user_2 = PlayerFactory()
+        user_3 = PlayerFactory()
+        user_4 = PlayerFactory()
+        group_1 = user_1.create_group("Group 1", public=True)
+        group_2 = user_2.create_group("Group 1", public=True)
+
+        user_2.join_group(group_1)
+        user_3.join_group(group_1)
+
+        # User Schedules a match
+        user_2.schedule_match(group_1,
+                                            date=timezone.make_aware(datetime.datetime.now() + datetime.timedelta(days=3)),
+                                            max_participants=15,
+                                            min_participants=10,
+                                            price=Decimal("20.0"))
+
+        # Checks if a match was not created
+        self.assertEqual(Match.objects.all().count(),0)
+
+        # Checks if no match invitations were issued
+        self.assertEqual(MatchInvitation.objects.all().count(),0)
