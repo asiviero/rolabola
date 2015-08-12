@@ -4,6 +4,8 @@ from django.utils import timezone
 from rolabola.models import *
 from rolabola.factories import *
 from decimal import Decimal
+from dateutil import rrule
+from collections import Counter
 import urllib
 
 # Create your tests here.
@@ -464,3 +466,28 @@ class MatchTest(TestCase):
 
         # Checks if no match invitations were issued
         self.assertEqual(MatchInvitation.objects.all().count(),0)
+
+    def test_schedule_until(self):
+        user_1 = PlayerFactory()
+        user_2 = PlayerFactory()
+        user_3 = PlayerFactory()
+        user_4 = PlayerFactory()
+        group_1 = user_1.create_group("Group 1", public=True)
+        user_2.join_group(group_1)
+        user_3.join_group(group_1)
+        user_1.schedule_match(group_1,
+                                            date=timezone.make_aware(datetime.datetime.now()),
+                                            max_participants=15,
+                                            min_participants=10,
+                                            price=Decimal("20.0"),
+                                            until=timezone.make_aware(datetime.datetime.now() + datetime.timedelta(days=50)))
+
+        rule = rrule.rrule(rrule.DAILY,
+                   dtstart=timezone.make_aware(datetime.datetime.now()),
+                   until=timezone.make_aware(datetime.datetime.now() + datetime.timedelta(days=50)))
+        total_matches = dict(Counter(d.strftime('%A') for d in rule)).get(datetime.datetime.now().strftime("%A"))
+        # Checks if matches for all weekdays were created
+        self.assertEqual(Match.objects.all().count(),total_matches)
+
+        # Checks if no match invitations were issued
+        self.assertEqual(MatchInvitation.objects.all().count(),3*total_matches)

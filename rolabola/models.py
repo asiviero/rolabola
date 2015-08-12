@@ -109,7 +109,18 @@ class Player(models.Model):
         return MembershipRequest.objects.filter(
             group__pk__in=group_list
         )
-    def schedule_match(self,group,date,max_participants,min_participants,price):
+    def schedule_match(self,group,date,max_participants,min_participants,price,until=None):
+        if not until is None:
+            base_date = date + datetime.timedelta(days=7)
+            while base_date < until:
+                Match.objects.create(
+                    group=group,
+                    date=date,
+                    max_participants=max_participants,
+                    min_participants=min_participants,
+                    price=price
+                )
+                base_date += datetime.timedelta(days=7)
         if Membership.objects.filter(member__pk=self.id,group__pk=group.pk,role=Membership.GROUP_ADMIN).count():
             return Match.objects.create(
                 group=group,
@@ -118,6 +129,7 @@ class Player(models.Model):
                 min_participants=min_participants,
                 price=price
             )
+
 
     def accept_match_invitation(self,match):
         try:
