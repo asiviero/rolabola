@@ -196,12 +196,20 @@ def group_match_create(request,group):
     if request.method == 'POST':
         group_match_create_form = MatchForm(request.POST)
         if group_match_create_form.is_valid():
+            today = datetime.datetime.now()
+            if group_match_create_form.cleaned_data["until_end_of_year"]:
+                until = timezone.make_aware(datetime.datetime(today.year,12,31))
+            elif group_match_create_form.cleaned_data["until_end_of_month"]:
+                until = timezone.make_aware(datetime.datetime(today.year,today.month,1)+dateutil.relativedelta.relativedelta(months=1,days=-1))
+            else:
+                until = None
             match = request.user.player.schedule_match(
                 group=get_object_or_404(Group,pk=group),
                 date=group_match_create_form.cleaned_data["date"],
                 max_participants=group_match_create_form.cleaned_data["max_participants"],
                 min_participants=group_match_create_form.cleaned_data["min_participants"],
                 price=group_match_create_form.cleaned_data["price"],
+                until=until
             )
             return redirect(reverse("group-match", args=(match.group.id,match.id,)))
     return render(request, "group_match_create.html", {

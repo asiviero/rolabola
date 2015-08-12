@@ -63,3 +63,6 @@ target/
 
 # Files uploaded
 rolabola/media/*
+
+# Celery
+celerybeat-schedule

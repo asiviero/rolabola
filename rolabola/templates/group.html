@@ -38,7 +38,7 @@
         {% for player_request in request_list %}
           <li>
             <a href="#" class="player-name">
-              {{ player_request.get_name }}
+              {{ player_request }}
             </a>
             <div class="confirm-container">
               <a class="btn-accept-group btn-floating btn-tiny green" data-url="{% url 'group-accept-request' group.pk player_request.pk %}">

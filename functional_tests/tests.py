@@ -1,6 +1,7 @@
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from django.test import LiveServerTestCase, RequestFactory
+from django.test.utils import override_settings
 from django.contrib.auth import authenticate
 from django.test import Client
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
@@ -811,6 +812,37 @@ class MatchTest(StaticLiveServerTestCase):
 
         buttons_match_create = self.browser.find_elements_by_class_name("btn-match-create")
         self.assertEqual(len(buttons_match_create),0)
+
+    @override_settings(CELERY_ALWAYS_EAGER=True)
+    def test_manager_can_schedule_until_end_of_month_or_year(self):
+        self.browser.get(self.live_server_url)
+
+        form_login = self.browser.find_element_by_id('form_login')
+        form_login.find_element_by_id("id_username").send_keys(self.user_2.user.username)
+        form_login.find_element_by_id("id_password").send_keys("123456")
+        form_login.find_element_by_css_selector("input[type='submit']").click()
+
+        buttons_match_create = self.browser.find_elements_by_class_name("btn-match-create")
+        self.assertEqual(len(buttons_match_create),2)
+
+        buttons_match_create[0].click()
+
+        time.sleep(1)
+
+        form_match = self.browser.find_element_by_id("form-group-match-creation")
+        form_match.find_element_by_id("id_date").send_keys(datetime.date.today().strftime("%d/%m/%Y"))
+        form_match.find_element_by_id("id_price").send_keys("10")
+        form_match.find_element_by_id("id_min_participants").send_keys("10")
+        form_match.find_element_by_id("id_max_participants").send_keys("15")
+        form_match.find_element_by_id("id_until_end_of_month")
+        form_match.find_element_by_id("id_until_end_of_year")
+
+        form_match.find_element_by_css_selector("input[type='submit']").click()
+
+        time.sleep(1)
+
+        # Perform the calendar tests
+
 
 
 class CalendarTest(StaticLiveServerTestCase):

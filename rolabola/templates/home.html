@@ -41,7 +41,7 @@
             {{ membership_request.group.name }}
           </a>
           <a href="#" class="player-name">
-            {{ membership_request.member.get_name }}
+            {{ membership_request.member }}
           </a>
           <div class="confirm-container">
             <a class="btn-accept-group btn-floating btn-tiny green" data-url="{% url 'group-accept-request' membership_request.group.pk membership_request.member.pk %}">

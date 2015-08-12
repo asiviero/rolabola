@@ -1,4 +1,5 @@
 from django.test import TestCase, Client
+from django.test.utils import override_settings
 from django.contrib.auth.models import User
 from django.utils import timezone
 from rolabola.models import *
@@ -467,6 +468,7 @@ class MatchTest(TestCase):
         # Checks if no match invitations were issued
         self.assertEqual(MatchInvitation.objects.all().count(),0)
 
+    @override_settings(CELERY_ALWAYS_EAGER=True)
     def test_schedule_until(self):
         user_1 = PlayerFactory()
         user_2 = PlayerFactory()
@@ -480,11 +482,11 @@ class MatchTest(TestCase):
                                             max_participants=15,
                                             min_participants=10,
                                             price=Decimal("20.0"),
-                                            until=timezone.make_aware(datetime.datetime.now() + datetime.timedelta(days=50)))
+                                            until=timezone.make_aware(datetime.datetime.now() + datetime.timedelta(days=500)))
 
         rule = rrule.rrule(rrule.DAILY,
                    dtstart=timezone.make_aware(datetime.datetime.now()),
-                   until=timezone.make_aware(datetime.datetime.now() + datetime.timedelta(days=50)))
+                   until=timezone.make_aware(datetime.datetime.now() + datetime.timedelta(days=500)))
         total_matches = dict(Counter(d.strftime('%A') for d in rule)).get(datetime.datetime.now().strftime("%A"))
         # Checks if matches for all weekdays were created
         self.assertEqual(Match.objects.all().count(),total_matches)

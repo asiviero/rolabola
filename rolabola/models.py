@@ -1,17 +1,23 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
+from django import forms
 from django.forms import ModelForm
 from django.db.models import Q
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from allauth.socialaccount.models import SocialAccount
+from django.utils import timezone
+from celery.decorators import task
+from celery.utils.log import get_task_logger
+from rolabola.models import *
+logger = get_task_logger(__name__)
 
 #import os
 from social import settings
-#from rolabola.signals import *
 
 import datetime
+import json
 
 class Player(models.Model):
     user = models.OneToOneField(User)
@@ -33,10 +39,7 @@ class Player(models.Model):
             return self.picture
         return settings.MEDIA_URL + str(self.picture)
 
-    def __unicode__(self):
-        return u"%s %s (%s)" % (self.user.first_name,self.user.last_name,self.nickname)
-
-    def get_name(self):
+    def __str__(self):
         return u"%s %s (%s)" % (self.user.first_name,self.user.last_name,self.nickname)
 
     def add_user(self,friend,message=""):
@@ -113,12 +116,13 @@ class Player(models.Model):
         if not until is None:
             base_date = date + datetime.timedelta(days=7)
             while base_date < until:
-                Match.objects.create(
-                    group=group,
-                    date=date,
+                schedule_match_task.delay(
+                    player=self.pk,
+                    group=group.pk,
+                    date={"year":base_date.year,"month":base_date.month,"day":base_date.day},
                     max_participants=max_participants,
                     min_participants=min_participants,
-                    price=price
+                    price=str(price)
                 )
                 base_date += datetime.timedelta(days=7)
         if Membership.objects.filter(member__pk=self.id,group__pk=group.pk,role=Membership.GROUP_ADMIN).count():
@@ -195,10 +199,27 @@ class Group(models.Model):
     public = models.BooleanField(default=True)
     picture = models.ImageField(default="/static/img/group_default.jpg",upload_to="rolabola/media/group/%Y/%m/%d")
 
+    def __str__(self):
+        return u"%s" % self.name
+
     def fetch_picture(self):
         if self.picture == Group._meta.get_field("picture").get_default():
             return self.picture
         return settings.MEDIA_URL + str(self.picture)
+
+@task(name="schedule_match_task")
+def schedule_match_task(player,group,date,max_participants,min_participants,price):
+    try:
+        logger.info("Scheduling...")
+        player = Player.objects.get(pk=player)
+        group = Group.objects.get(pk=group)
+        date = timezone.make_aware(datetime.datetime(date.get("year"),date.get("month"),date.get("day")))
+        player.schedule_match(group,date,max_participants,min_participants,price)
+    except Player.DoesNotExist:
+        pass
+    except Group.DoesNotExist:
+        pass
+
 
 class GroupForm(ModelForm):
     class Meta:
@@ -251,13 +272,22 @@ class Match(models.Model):
     def get_confirmed_list(self):
         return self.player_list.filter(matchinvitation__status=MatchInvitation.CONFIRMED)
 
+    def __str__(self):
+        return u"%s (%s)" % (self.group.name,self.date.strftime("%d/%m/%Y"))
+
 post_save.connect(match_post_save, sender=Match)
 
 class MatchForm(ModelForm):
     class Meta:
         model = Match
         fields = ["date","max_participants","min_participants","price"]
-
+    until_end_of_month = forms.BooleanField(label="Schedule until the end of the month",required=False)
+    until_end_of_year = forms.BooleanField(label="Schedule until the end of the year",required=False)
+    def clean(self):
+        super(MatchForm,self).clean()
+        until_end_of_month = self.cleaned_data.get("until_end_of_month")
+        until_end_of_year = self.cleaned_data.get("until_end_of_year")
+        return self.cleaned_data
 
 class MatchInvitation(models.Model):
     CONFIRMED = "confirmed"
