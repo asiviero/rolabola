@@ -14,7 +14,7 @@
       {% endif %}
       {% if model == "Group" %}
         <div class="img-wrapper col s3">
-          <img class="group-icon responsive-img circle" src="{{ MEDIA_URL}}{{ result.res.picture }}" />
+          <img class="group-icon responsive-img circle" src="{{ result.res.fetch_picture }}" />
         </div>
         <div class="group-info-wrapper col s9">
           <a href="{% url 'Group' result.res.id %}" class="group-name">{{ result.res.name }}</a>

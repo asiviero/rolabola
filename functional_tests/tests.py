@@ -575,6 +575,7 @@ class MatchTest(StaticLiveServerTestCase):
         # Create groups
         self.group_public = self.user_1.create_group("Public Group",public = True)
         self.group_private = self.user_1.create_group("Private Group",public = False)
+        self.group_from_user_2 = self.user_2.create_group("User 2 Private Group",public = False)
         self.user_2.join_group(self.group_public)
 
     def tearDown(self):
@@ -706,6 +707,51 @@ class MatchTest(StaticLiveServerTestCase):
         # Clicks on match page
 
         # Sees his name on the "confirmed" list
+
+    def test_manager_can_schedule_match_from_home_page(self):
+        # User 1 logs in
+        self.browser.get(self.live_server_url)
+
+        form_login = self.browser.find_element_by_id('form_login')
+        form_login.find_element_by_id("id_username").send_keys(self.user_1.user.username)
+        form_login.find_element_by_id("id_password").send_keys("123456")
+        form_login.find_element_by_css_selector("input[type='submit']").click()
+
+        buttons_match_create = self.browser.find_elements_by_class_name("btn-match-create")
+        self.assertEqual(len(buttons_match_create),2)
+
+        buttons_match_create[0].click()
+
+        time.sleep(1)
+
+        form_match = self.browser.find_element_by_id("form-group-match-creation")
+        form_match.find_element_by_id("id_date").send_keys(datetime.date.today().strftime("%d/%m/%Y"))
+        form_match.find_element_by_id("id_price").send_keys("10")
+        form_match.find_element_by_id("id_min_participants").send_keys("10")
+        form_match.find_element_by_id("id_max_participants").send_keys("15")
+
+        form_match.find_element_by_css_selector("input[type='submit']").click()
+
+        time.sleep(1)
+
+        self.browser.get(self.live_server_url)
+
+        match_invitations = self.browser.find_element_by_id("schedule-box").find_elements_by_class_name("match-invitation")
+        self.assertEqual(len(match_invitations),1)
+
+        # Logs out
+        self.browser.find_element_by_link_text("Logout").click()
+
+        # User 2 logs in, sees the same match invitation
+        self.browser.get(self.live_server_url)
+
+        form_login = self.browser.find_element_by_id('form_login')
+        form_login.find_element_by_id("id_username").send_keys(self.user_1.user.username)
+        form_login.find_element_by_id("id_password").send_keys("123456")
+        form_login.find_element_by_css_selector("input[type='submit']").click()
+
+        match_invitations = self.browser.find_element_by_id("schedule-box").find_elements_by_class_name("match-invitation")
+
 
 class CalendarTest(StaticLiveServerTestCase):
 

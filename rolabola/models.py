@@ -8,7 +8,7 @@ from django.dispatch import receiver
 from allauth.socialaccount.models import SocialAccount
 
 #import os
-#from social import settings
+from social import settings
 #from rolabola.signals import *
 
 import datetime
@@ -29,7 +29,9 @@ class Player(models.Model):
         fb_uid = SocialAccount.objects.filter(user_id=self.user.id, provider='facebook')
         if len(fb_uid):
             return "http://graph.facebook.com/{}/picture".format(fb_uid[0].uid)
-        return self.picture
+        if self.picture == Player._meta.get_field("picture").get_default():
+            return self.picture
+        return settings.MEDIA_URL + str(self.picture)
 
     def __unicode__(self):
         return u"%s %s (%s)" % (self.user.first_name,self.user.last_name,self.nickname)
@@ -180,6 +182,11 @@ class Group(models.Model):
                                                                                     related_name = "request_list_group")
     public = models.BooleanField(default=True)
     picture = models.ImageField(default="/static/img/group_default.jpg",upload_to="rolabola/media/group/%Y/%m/%d")
+
+    def fetch_picture(self):
+        if self.picture == Group._meta.get_field("picture").get_default():
+            return self.picture
+        return settings.MEDIA_URL + str(self.picture)
 
 class GroupForm(ModelForm):
     class Meta:
