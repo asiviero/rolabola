@@ -158,7 +158,7 @@ def group_accept_request(request,group,player):
     player = get_object_or_404(Player, pk=player)
     request.user.player.accept_request_group(group,player)
     response = {
-        "message" : "%s Accepted into group %s" % (player.get_name(),group.name)
+        "message" : "%s Accepted into group %s" % (player,group.name)
     }
     if "group/%s" % group.pk in request.META.get("HTTP_REFERER"):
         response["append-fragments"] = {
@@ -174,7 +174,7 @@ def group_reject_request(request,group,player):
     player = get_object_or_404(Player, pk=player)
     request.user.player.reject_request_group(group,player)
     response = JsonResponse({
-        "message" : "%s rejected into group %s" % (player.get_name(),group.name)
+        "message" : "%s rejected into group %s" % (player,group.name)
     })
     response.status_code = 200
     return response

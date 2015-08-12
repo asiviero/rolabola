@@ -470,7 +470,7 @@ class GroupTest(StaticLiveServerTestCase):
         # Accept the first (user_1), reject the second (user_3)
         time.sleep(1)
         # self.assertEqual(membership_requests[0].find_element_by_class_name("player-name").text,self.user_1.get_name())
-        if(self.user_1.get_name() == membership_requests[0].find_element_by_class_name("player-name").text):
+        if(str(self.user_1) == membership_requests[0].find_element_by_class_name("player-name").text):
             membership_requests[0].find_element_by_css_selector("a.btn-accept-group i.material-icons").click()
         else :
             membership_requests[0].find_element_by_css_selector("a.btn-reject-group i.material-icons").click()
@@ -479,7 +479,7 @@ class GroupTest(StaticLiveServerTestCase):
         requests_block = self.browser.find_element_by_class_name("membership-requests")
         membership_requests = requests_block.find_elements_by_tag_name("li")
         self.assertEqual(len(membership_requests),2)
-        if(self.user_1.get_name() == membership_requests[0].find_element_by_class_name("player-name").text):
+        if(str(self.user_1) == membership_requests[0].find_element_by_class_name("player-name").text):
             membership_requests[0].find_element_by_css_selector("a.btn-accept-group i.material-icons").click()
         else :
             membership_requests[0].find_element_by_css_selector("a.btn-reject-group i.material-icons").click()
@@ -489,7 +489,7 @@ class GroupTest(StaticLiveServerTestCase):
         membership_requests = requests_block.find_elements_by_tag_name("li")
         self.assertEqual(len(membership_requests),1)
 
-        if(self.user_1.get_name() == membership_requests[0].find_element_by_class_name("player-name").text):
+        if(str(self.user_1) == membership_requests[0].find_element_by_class_name("player-name").text):
             membership_requests[0].find_element_by_css_selector("a.btn-accept-group i.material-icons").click()
         else :
             membership_requests[0].find_element_by_css_selector("a.btn-reject-group i.material-icons").click()
@@ -516,7 +516,7 @@ class GroupTest(StaticLiveServerTestCase):
         self.assertEqual(len(membership_requests),2)
 
         # Accept the first (user_1), reject the second (user_3)
-        if(self.user_1.get_name() == membership_requests[0].find_element_by_class_name("player-name").text):
+        if(str(self.user_1) == membership_requests[0].find_element_by_class_name("player-name").text):
             membership_requests[0].find_element_by_css_selector("a.btn-accept-group i.material-icons").click()
         else :
             membership_requests[0].find_element_by_css_selector("a.btn-reject-group i.material-icons").click()
@@ -530,7 +530,7 @@ class GroupTest(StaticLiveServerTestCase):
         self.assertEqual(len(membership_requests),1)
         self.assertIn(self.user_1.user.first_name,self.browser.find_element_by_id("member-list").text)
 
-        if(self.user_1.get_name() == membership_requests[0].find_element_by_class_name("player-name").text):
+        if(str(self.user_1) == membership_requests[0].find_element_by_class_name("player-name").text):
             membership_requests[0].find_element_by_css_selector("a.btn-accept-group i.material-icons").click()
         else :
             membership_requests[0].find_element_by_css_selector("a.btn-reject-group i.material-icons").click()
