@@ -284,9 +284,12 @@ class GroupTest(StaticLiveServerTestCase):
         self.group_2 = self.user_2.create_group("%s's Private Group" % (self.user_2.nickname),public=False)
         self.group_3 = self.user_2.create_group("%s's Joined Group" % (self.user_2.nickname),public=True)
         self.group_4 = self.user_2.create_group("%s's Private Joined Group" % (self.user_2.nickname),public=False)
+        self.group_5 = self.user_3.create_group("%s's Private Joined Group" % (self.user_3.nickname),public=False)
         self.user_1.join_group(self.group_3)
         self.user_1.join_group(self.group_4)
+        self.user_3.join_group(self.group_2)
         self.user_3.join_group(self.group_4)
+        self.user_1.join_group(self.group_5)
 
     def tearDown(self):
         self.browser.quit()
@@ -400,80 +403,6 @@ class GroupTest(StaticLiveServerTestCase):
         button = side_pane.find_element_by_css_selector("a.btn-join-group.disabled")
         self.assertIn("MEMBERSHIP REQUESTED",button.text)
 
-    """
-    def test_user_can_join_private_group(self):
-
-        self.browser.get(self.live_server_url)
-
-        form_login = self.browser.find_element_by_id('form_login')
-        form_login.find_element_by_id("id_username").send_keys(self.user_2.user.username)
-        form_login.find_element_by_id("id_password").send_keys("123456")
-        form_login.find_element_by_css_selector("input[type='submit']").click()
-
-        # User enters the desired group url
-        self.browser.get("%s/group/%d/" % (self.live_server_url,self.group_private.id))
-
-        # User clicks in "Join"
-        self.browser.find_element_by_link_text("Join").click()
-        time.sleep(1)
-
-        # User doesn't see his name on the member list
-        self.assertNotIn(self.user_2.user.first_name,self.browser.find_element_by_id("member-list").text)
-
-        # User sees his name in the pending approval list
-        self.assertIn(self.user_2.user.first_name,self.browser.find_element_by_id("member-pending-list").text)
-
-        # User doesn't see a Join link anymore
-        self.assertNotIn("Join",self.browser.find_element_by_class_name("side-pane").text)
-
-        self.browser.get("%s/logout" % self.live_server_url)
-        self.browser.get(self.live_server_url)
-
-        form_login = self.browser.find_element_by_id('form_login')
-        form_login.find_element_by_id("id_username").send_keys(self.user_1.user.username)
-        form_login.find_element_by_id("id_password").send_keys("123456")
-        form_login.find_element_by_css_selector("input[type='submit']").click()
-
-        self.browser.get("%s/group/%d/" % (self.live_server_url,self.group_private.id))
-
-        # Admin sees a new user request
-        self.assertEqual(len(self.browser.find_element_by_id("member-pending-list").find_elements_by_tag_name("li")),1)
-        self.browser.find_element_by_id("member-pending-list").find_element_by_link_text("Accept").click()
-
-        self.assertIn(self.user_2.user.first_name,self.browser.find_element_by_id("member-list").text)
-        self.assertEqual(len(self.browser.find_element_by_id("member-list")
-                                                    .find_elements_by_tag_name("li")),2)
-
-
-    def test_user_can_join_once(self):
-
-        self.browser.get(self.live_server_url)
-
-        form_login = self.browser.find_element_by_id('form_login')
-        form_login.find_element_by_id("id_username").send_keys(self.user_2.user.username)
-        form_login.find_element_by_id("id_password").send_keys("123456")
-        form_login.find_element_by_css_selector("input[type='submit']").click()
-
-        # User enters the desired group url
-        self.browser.get("%s/group/%d/" % (self.live_server_url,self.group_public.id))
-
-        # User clicks in "Join"
-        self.browser.find_element_by_link_text("Join").click()
-        time.sleep(1)
-
-        # User now sees his name on the member list
-        self.assertIn(self.user_2.user.first_name,self.browser.find_element_by_id("member-list").text)
-        count = len(self.browser.find_element_by_id("member-list")
-                                                    .find_elements_by_tag_name("li"))
-
-        # User enters the join url again
-        self.browser.get("%s/group/%d/join" % (self.live_server_url,self.group_public.id))
-
-        # List remains the same size
-        self.assertEqual(count,len(self.browser.find_element_by_id("member-list")
-                                                    .find_elements_by_tag_name("li")))
-
-    """
     def test_admin_can_set_group_as_private(self):
         self.browser.get(self.live_server_url)
 
@@ -535,20 +464,34 @@ class GroupTest(StaticLiveServerTestCase):
 
         requests_block = self.browser.find_element_by_class_name("membership-requests")
         membership_requests = requests_block.find_elements_by_tag_name("li")
-        self.assertEqual(len(membership_requests),2)
+        self.assertEqual(len(membership_requests),3)
 
         # Accept the first (user_1), reject the second (user_3)
-        self.assertEqual(membership_requests[0].find_element_by_class_name("group-name").text,self.group_4.name)
         time.sleep(1)
-        self.assertEqual(membership_requests[0].find_element_by_class_name("player-name").text,self.user_1.get_name())
-        membership_requests[0].find_element_by_css_selector("a.btn-accept-group i.material-icons").click()
+        # self.assertEqual(membership_requests[0].find_element_by_class_name("player-name").text,self.user_1.get_name())
+        if(self.user_1.get_name() == membership_requests[0].find_element_by_class_name("player-name").text):
+            membership_requests[0].find_element_by_css_selector("a.btn-accept-group i.material-icons").click()
+        else :
+            membership_requests[0].find_element_by_css_selector("a.btn-reject-group i.material-icons").click()
         time.sleep(3)
+
+        requests_block = self.browser.find_element_by_class_name("membership-requests")
+        membership_requests = requests_block.find_elements_by_tag_name("li")
+        self.assertEqual(len(membership_requests),2)
+        if(self.user_1.get_name() == membership_requests[0].find_element_by_class_name("player-name").text):
+            membership_requests[0].find_element_by_css_selector("a.btn-accept-group i.material-icons").click()
+        else :
+            membership_requests[0].find_element_by_css_selector("a.btn-reject-group i.material-icons").click()
+        time.sleep(3)
+
+        requests_block = self.browser.find_element_by_class_name("membership-requests")
         membership_requests = requests_block.find_elements_by_tag_name("li")
         self.assertEqual(len(membership_requests),1)
-        self.assertEqual(membership_requests[0].find_element_by_class_name("group-name").text,self.group_4.name)
 
-        self.assertEqual(membership_requests[0].find_element_by_class_name("player-name").text,self.user_3.get_name())
-        membership_requests[0].find_element_by_css_selector("a.btn-reject-group i.material-icons").click()
+        if(self.user_1.get_name() == membership_requests[0].find_element_by_class_name("player-name").text):
+            membership_requests[0].find_element_by_css_selector("a.btn-accept-group i.material-icons").click()
+        else :
+            membership_requests[0].find_element_by_css_selector("a.btn-reject-group i.material-icons").click()
         time.sleep(3)
         membership_requests = requests_block.find_elements_by_tag_name("li")
         self.assertEqual(len(membership_requests),0)
@@ -558,6 +501,61 @@ class GroupTest(StaticLiveServerTestCase):
         self.assertIn(self.user_1.user.first_name,self.browser.find_element_by_id("member-list").text)
         self.assertNotIn(self.user_3.user.first_name,self.browser.find_element_by_id("member-list").text)
 
+    def test_admin_can_accept_or_reject_membership_requests_in_group_page(self):
+        self.browser.get(self.live_server_url)
+        form_login = self.browser.find_element_by_id('form_login')
+        form_login.find_element_by_id("id_username").send_keys(self.user_2.user.username)
+        form_login.find_element_by_id("id_password").send_keys("123456")
+        form_login.find_element_by_css_selector("input[type='submit']").click()
+
+        self.browser.get("%s/group/%s" % (self.live_server_url,self.group_4.pk))
+
+        requests_block = self.browser.find_element_by_class_name("membership-requests")
+        membership_requests = requests_block.find_elements_by_tag_name("li")
+        self.assertEqual(len(membership_requests),2)
+
+        # Accept the first (user_1), reject the second (user_3)
+        if(self.user_1.get_name() == membership_requests[0].find_element_by_class_name("player-name").text):
+            membership_requests[0].find_element_by_css_selector("a.btn-accept-group i.material-icons").click()
+        else :
+            membership_requests[0].find_element_by_css_selector("a.btn-reject-group i.material-icons").click()
+
+        time.sleep(3)
+        self.assertIn(self.user_1.user.first_name,self.browser.find_element_by_id("member-list").text)
+
+        requests_block = self.browser.find_element_by_class_name("membership-requests")
+        membership_requests = requests_block.find_elements_by_tag_name("li")
+
+        self.assertEqual(len(membership_requests),1)
+        self.assertIn(self.user_1.user.first_name,self.browser.find_element_by_id("member-list").text)
+
+        if(self.user_1.get_name() == membership_requests[0].find_element_by_class_name("player-name").text):
+            membership_requests[0].find_element_by_css_selector("a.btn-accept-group i.material-icons").click()
+        else :
+            membership_requests[0].find_element_by_css_selector("a.btn-reject-group i.material-icons").click()
+        time.sleep(3)
+
+        requests_block = self.browser.find_element_by_class_name("membership-requests")
+        membership_requests = requests_block.find_elements_by_tag_name("li")
+        self.assertEqual(len(membership_requests),0)
+
+        self.assertNotIn(self.user_3.user.first_name,self.browser.find_element_by_id("member-list").text)
+
+    def test_non_admin_cant_see_membership_requests(self):
+        self.browser.get(self.live_server_url)
+
+        form_login = self.browser.find_element_by_id('form_login')
+        form_login.find_element_by_id("id_username").send_keys(self.user_1.user.username)
+        form_login.find_element_by_id("id_password").send_keys("123456")
+        form_login.find_element_by_css_selector("input[type='submit']").click()
+
+        requests_block = self.browser.find_elements_by_class_name("membership-requests")
+        self.assertEqual(len(requests_block),0)
+
+        self.browser.get("%s/group/%s" % (self.live_server_url,self.group_4.pk))
+
+        requests_block = self.browser.find_elements_by_class_name("membership-requests")
+        self.assertEqual(len(requests_block),0)
 
 class MatchTest(StaticLiveServerTestCase):
 

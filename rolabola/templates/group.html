@@ -16,20 +16,9 @@
     <a href="{% url 'group-match-create' group.id %}">New Match</a>
   {% endif %}
   <div class="public-wrapper">
-    {{ is_admin }}
     <input type="checkbox" id="checkbox-public-group" data-group="{{ group.pk }}"
       {{ group.public|yesno:'checked="checked", ' }} {{ is_admin|yesno:' ,disabled="disabled"' }}/>
     <label for="checkbox-public-group">Public</label>
-  </div>
-  <div id="member-pending-list">
-    <ul>
-      {% for member_request in request_list %}
-        <li>
-          {{ member_request.user.first_name }} {{ member_request.user.last_name }} ({{ member_request.nickname }})
-          <a href="{% url 'group-accept-request' group.id member_request.id %}">Accept</a>
-        </li>
-      {% endfor %}
-    </ul>
   </div>
   <div id="member-list">
     <ul>
@@ -40,4 +29,30 @@
       {% endfor %}
     </ul>
   </div>
+{% endblock %}
+{% block main_content_block %}
+  {% if is_admin %}
+    {% if request_list.count %}
+    <div class="membership-requests">
+      <ul>
+        {% for player_request in request_list %}
+          <li>
+            <a href="#" class="player-name">
+              {{ player_request.get_name }}
+            </a>
+            <div class="confirm-container">
+              <a class="btn-accept-group btn-floating btn-tiny green" data-url="{% url 'group-accept-request' group.pk player_request.pk %}">
+                <i class="material-icons">done</i>
+              </a>
+              <a class="btn-reject-group btn-floating btn-tiny red" data-url="{% url 'group-reject-request' group.pk player_request.pk %}">
+                <i class="material-icons">clear</i>
+              </a>
+            </div>
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+  {% endif %}
+
 {% endblock %}

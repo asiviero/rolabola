@@ -111,7 +111,6 @@ def group(request,group):
     user_in_group = group.member_list.filter(pk=request.user.player.id).count() != 0
     user_requested_membership = group.member_pending_list.filter(pk=request.user.player.id).count() != 0
     is_admin = request.user.player in group.member_list.filter(membership__role=Membership.GROUP_ADMIN)
-    #group.member_pending_list.all()
     return render(request, "group.html", {
         "group":group,
         "user_in_group":user_in_group,
@@ -136,7 +135,7 @@ def group_join(request,group):
     else:
         if not "search" in request.META.get("HTTP_REFERER"):
             response["replace_string"] = "membership requested"
-    print(response)
+    # print(response)
     return response
 
 @group_admin_required
@@ -146,10 +145,9 @@ def group_make_private(request,group):
     group = get_object_or_404(Group, pk=group)
     group.public = not group.public
     group.save()
-    response = JsonResponse({
+    response = {
         "message" : "Group status changed to %s" % ("Public" if group.public else "Private")
-    })
-    response.status_code = 200
+    }
     return response
 
 @group_admin_required
@@ -159,10 +157,13 @@ def group_accept_request(request,group,player):
     group = get_object_or_404(Group, pk=group)
     player = get_object_or_404(Player, pk=player)
     request.user.player.accept_request_group(group,player)
-    response = JsonResponse({
+    response = {
         "message" : "%s Accepted into group %s" % (player.get_name(),group.name)
-    })
-    response.status_code = 200
+    }
+    if "group/%s" % group.pk in request.META.get("HTTP_REFERER"):
+        response["append-fragments"] = {
+            "#member-list ul" : "<li>%s %s (%s)</li>" % (player.user.first_name,player.user.last_name,player.nickname)
+        }
     return response
 
 @group_admin_required
