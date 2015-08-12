@@ -54,5 +54,10 @@
     </div>
     {% endif %}
   {% endif %}
+  {% if is_admin %}
+  <a class="btn-floating btn-large btn-match-create green" href="{% url 'group-match-create' group.pk %}">
+    <i class="material-icons">add</i>
+  </a>
+  {% endif %}
 
 {% endblock %}

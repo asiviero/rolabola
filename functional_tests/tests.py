@@ -752,6 +752,66 @@ class MatchTest(StaticLiveServerTestCase):
 
         match_invitations = self.browser.find_element_by_id("schedule-box").find_elements_by_class_name("match-invitation")
 
+    def test_manager_can_schedule_match_from_group_page(self):
+
+        self.browser.get(self.live_server_url)
+
+        form_login = self.browser.find_element_by_id('form_login')
+        form_login.find_element_by_id("id_username").send_keys(self.user_1.user.username)
+        form_login.find_element_by_id("id_password").send_keys("123456")
+        form_login.find_element_by_css_selector("input[type='submit']").click()
+
+        self.browser.get("%s/group/%s" % (self.live_server_url,self.group_public.pk))
+
+        buttons_match_create = self.browser.find_elements_by_class_name("btn-match-create")
+        self.assertEqual(len(buttons_match_create),1)
+
+        buttons_match_create[0].click()
+
+        time.sleep(1)
+
+        form_match = self.browser.find_element_by_id("form-group-match-creation")
+        form_match.find_element_by_id("id_date").send_keys(datetime.date.today().strftime("%d/%m/%Y"))
+        form_match.find_element_by_id("id_price").send_keys("10")
+        form_match.find_element_by_id("id_min_participants").send_keys("10")
+        form_match.find_element_by_id("id_max_participants").send_keys("15")
+
+        form_match.find_element_by_css_selector("input[type='submit']").click()
+
+        time.sleep(1)
+
+        self.browser.get(self.live_server_url)
+
+        match_invitations = self.browser.find_element_by_id("schedule-box").find_elements_by_class_name("match-invitation")
+        self.assertEqual(len(match_invitations),1)
+        self.assertIn(self.group_public.name,match_invitations[0].text)
+
+        # Logs out
+        self.browser.find_element_by_link_text("Logout").click()
+
+        # User 2 logs in, sees the same match invitation
+        self.browser.get(self.live_server_url)
+
+        form_login = self.browser.find_element_by_id('form_login')
+        form_login.find_element_by_id("id_username").send_keys(self.user_1.user.username)
+        form_login.find_element_by_id("id_password").send_keys("123456")
+        form_login.find_element_by_css_selector("input[type='submit']").click()
+
+        match_invitations = self.browser.find_element_by_id("schedule-box").find_elements_by_class_name("match-invitation")
+
+    def test_non_manager_cant_see_new_match_button(self):
+        self.browser.get(self.live_server_url)
+
+        form_login = self.browser.find_element_by_id('form_login')
+        form_login.find_element_by_id("id_username").send_keys(self.user_2.user.username)
+        form_login.find_element_by_id("id_password").send_keys("123456")
+        form_login.find_element_by_css_selector("input[type='submit']").click()
+
+        self.browser.get("%s/group/%s" % (self.live_server_url,self.group_public.pk))
+
+        buttons_match_create = self.browser.find_elements_by_class_name("btn-match-create")
+        self.assertEqual(len(buttons_match_create),0)
+
 
 class CalendarTest(StaticLiveServerTestCase):
 
