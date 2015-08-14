@@ -566,3 +566,28 @@ class CalendarTest(TestCase):
         self.assertEqual(len(match_invitation_list_user_3),1)
         match_invitation_list_user_4 = user_4.get_match_invitations()
         self.assertEqual(len(match_invitation_list_user_4),0)
+
+    @override_settings(CELERY_ALWAYS_EAGER=True)
+    def test_filter_match_invitation_by_dates(self):
+        user_1 = PlayerFactory()
+        user_2 = PlayerFactory()
+        group_1 = user_1.create_group("Group 1", public=True)
+        user_2.join_group(group_1)
+        user_1.schedule_match(group_1,
+                                            date=timezone.make_aware(datetime.datetime.now()),
+                                            max_participants=15,
+                                            min_participants=10,
+                                            price=Decimal("20.0"),
+                                            until=timezone.make_aware(datetime.datetime.now() + datetime.timedelta(days=500)))
+        user_1.schedule_match(group_1,
+                                            date=timezone.make_aware(datetime.datetime.now()) + datetime.timedelta(days=1),
+                                            max_participants=15,
+                                            min_participants=10,
+                                            price=Decimal("20.0"),
+                                            until=timezone.make_aware(datetime.datetime.now() + datetime.timedelta(days=500)))
+
+        match_invitation_list_user_1 = user_1.get_match_invitations(
+                                                                                                        start_date=(timezone.make_aware(datetime.datetime.now() + datetime.timedelta(days=-2))),
+                                                                                                        end_date=(timezone.make_aware(datetime.datetime.now() + datetime.timedelta(days=+10))),
+                                                                                                    )
+        self.assertEqual(len(match_invitation_list_user_1),4)
