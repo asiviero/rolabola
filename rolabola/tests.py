@@ -493,3 +493,43 @@ class MatchTest(TestCase):
 
         # Checks if no match invitations were issued
         self.assertEqual(MatchInvitation.objects.all().count(),3*total_matches)
+
+class CalendarTest(TestCase):
+
+    def test_list_of_match_invitations_for_user(self):
+        user_1 = PlayerFactory()
+        user_2 = PlayerFactory()
+        user_3 = PlayerFactory()
+        user_4 = PlayerFactory()
+        group_1 = user_1.create_group("Group 1", public=True)
+        group_2 = user_1.create_group("Group 2", public=True)
+        group_3 = user_1.create_group("Group 3", public=True)
+        user_2.join_group(group_1)
+        user_2.join_group(group_2)
+        user_2.join_group(group_3)
+        user_3.join_group(group_1)
+        user_3.join_group(group_2)
+        user_4.join_group(group_1)
+        user_1.schedule_match(group_1,
+                                            date=timezone.make_aware(datetime.datetime.now()),
+                                            max_participants=15,
+                                            min_participants=10,
+                                            price=Decimal("20.0"))
+        user_1.schedule_match(group_2,
+                                            date=timezone.make_aware(datetime.datetime.now()+datetime.timedelta(days=1)),
+                                            max_participants=15,
+                                            min_participants=10,
+                                            price=Decimal("20.0"))
+        user_1.schedule_match(group_3,
+                                            date=timezone.make_aware(datetime.datetime.now()+datetime.timedelta(days=2)),
+                                            max_participants=15,
+                                            min_participants=10,
+                                            price=Decimal("20.0"))
+        match_invitation_list_user_1 = user_1.get_match_invitations()
+        self.assertEqual(len(match_invitation_list_user_1),3)
+        match_invitation_list_user_2 = user_2.get_match_invitations()
+        self.assertEqual(len(match_invitation_list_user_2),3)
+        match_invitation_list_user_3 = user_3.get_match_invitations()
+        self.assertEqual(len(match_invitation_list_user_3),2)
+        match_invitation_list_user_4 = user_4.get_match_invitations()
+        self.assertEqual(len(match_invitation_list_user_4),1)

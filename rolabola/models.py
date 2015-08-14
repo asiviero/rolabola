@@ -112,6 +112,7 @@ class Player(models.Model):
         return MembershipRequest.objects.filter(
             group__pk__in=group_list
         )
+
     def schedule_match(self,group,date,max_participants,min_participants,price,until=None):
         if not until is None:
             base_date = date + datetime.timedelta(days=7)
@@ -133,6 +134,9 @@ class Player(models.Model):
                 min_participants=min_participants,
                 price=price
             )
+
+    def get_match_invitations(self):
+        return MatchInvitation.objects.filter(player__pk=self.pk)
 
 
     def accept_match_invitation(self,match):
