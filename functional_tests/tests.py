@@ -2,9 +2,11 @@ from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from django.test import LiveServerTestCase, RequestFactory
 from django.test.utils import override_settings
+from django.utils import timezone
 from django.contrib.auth import authenticate
 from django.test import Client
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
+from decimal import Decimal
 from rolabola.factories import *
 import datetime
 import dateutil
@@ -865,14 +867,14 @@ class CalendarTest(StaticLiveServerTestCase):
         self.group_private = self.user_1.create_group("Private Group",public = False)
         self.user_2.join_group(self.group_public)
 
-        self.user_1.schedule_match(group_public,
+        self.user_1.schedule_match(self.group_public,
                                             date=timezone.make_aware(datetime.datetime.now()),
                                             max_participants=15,
                                             min_participants=10,
                                             price=Decimal("20.0")
         )
 
-        self.user_1.schedule_match(group_public,
+        self.user_1.schedule_match(self.group_public,
                                             date=timezone.make_aware(datetime.datetime.now() + datetime.timedelta(weeks=1)),
                                             max_participants=15,
                                             min_participants=10,
@@ -881,3 +883,63 @@ class CalendarTest(StaticLiveServerTestCase):
 
     def tearDown(self):
         self.browser.quit()
+
+    def test_calendar_navigation_weekly_on_home_page(self):
+        self.browser.get(self.live_server_url)
+
+        form_login = self.browser.find_element_by_id('form_login')
+        form_login.find_element_by_id("id_username").send_keys(self.user_1.user.username)
+        form_login.find_element_by_id("id_password").send_keys("123456")
+        form_login.find_element_by_css_selector("input[type='submit']").click()
+
+        # User sees a table with a calendar
+        calendar_view_rows = self.browser.find_element_by_id("schedule-box").find_elements_by_tag_name("tr")
+
+        self.assertEqual(len(calendar_view_rows),2)
+
+        # assert the columns
+        self.assertEqual(len(calendar_view_rows[0].find_elements_by_tag_name("th")),7)
+        self.assertEqual(len(calendar_view_rows[1].find_elements_by_tag_name("td")),7)
+
+        # assert the days
+        last_sunday = str((datetime.date.today()+dateutil.relativedelta.relativedelta(weekday=dateutil.relativedelta.SU(-1))).day)
+        next_saturday = str((datetime.date.today()+dateutil.relativedelta.relativedelta(weekday=dateutil.relativedelta.SA(+1))).day)
+        self.assertIn(last_sunday,calendar_view_rows[0].find_elements_by_tag_name("th")[0].text)
+        self.assertIn(next_saturday,calendar_view_rows[0].find_elements_by_tag_name("th")[-1].text)
+
+        match_invitations = self.browser.find_element_by_id("schedule-box").find_elements_by_class_name("match-invitation")
+        self.assertEqual(len(match_invitations),1)
+
+        # User sees next button and clicks it
+        self.browser.find_element_by_id("schedule-box").find_element_by_css_selector("a.btn-next i.material-icons").click()
+        time.sleep(3)
+        # assert the days for next week
+        new_last_sunday = str((datetime.date.today()+dateutil.relativedelta.relativedelta(weekday=dateutil.relativedelta.SU(+1))).day)
+        new_next_saturday = str((datetime.date.today()+dateutil.relativedelta.relativedelta(weekday=dateutil.relativedelta.SA(+2))).day)
+        self.assertIn(new_last_sunday,calendar_view_rows[0].find_elements_by_tag_name("th")[0].text)
+        self.assertIn(new_next_saturday,calendar_view_rows[0].find_elements_by_tag_name("th")[-1].text)
+
+        match_invitations = self.browser.find_element_by_id("schedule-box").find_elements_by_class_name("match-invitation")
+        self.assertEqual(len(match_invitations),1)
+
+        # User sees prev button and clicks it
+        self.browser.find_element_by_id("schedule-box").find_element_by_css_selector("a.btn-prev i.material-icons").click()
+        time.sleep(3)
+        last_sunday = str((datetime.date.today()+dateutil.relativedelta.relativedelta(weekday=dateutil.relativedelta.SU(-1))).day)
+        next_saturday = str((datetime.date.today()+dateutil.relativedelta.relativedelta(weekday=dateutil.relativedelta.SA(+1))).day)
+        self.assertIn(last_sunday,calendar_view_rows[0].find_elements_by_tag_name("th")[0].text)
+        self.assertIn(next_saturday,calendar_view_rows[0].find_elements_by_tag_name("th")[-1].text)
+
+        match_invitations = self.browser.find_element_by_id("schedule-box").find_elements_by_class_name("match-invitation")
+        self.assertEqual(len(match_invitations),1)
+
+        # User sees prev button and clicks it again
+        self.browser.find_element_by_id("schedule-box").find_element_by_css_selector("a.btn-prev i.material-icons").click()
+        time.sleep(3)
+        last_sunday = str((datetime.date.today()+dateutil.relativedelta.relativedelta(weekday=dateutil.relativedelta.SU(-2))).day)
+        next_saturday = str((datetime.date.today()+dateutil.relativedelta.relativedelta(weekday=dateutil.relativedelta.SA(-1))).day)
+        self.assertIn(last_sunday,calendar_view_rows[0].find_elements_by_tag_name("th")[0].text)
+        self.assertIn(next_saturday,calendar_view_rows[0].find_elements_by_tag_name("th")[-1].text)
+
+        match_invitations = self.browser.find_element_by_id("schedule-box").find_elements_by_class_name("match-invitation")
+        self.assertEqual(len(match_invitations),0)

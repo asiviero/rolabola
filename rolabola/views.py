@@ -5,6 +5,7 @@ from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.models import User
 from django.forms.models import inlineformset_factory
+from django.template import Context, Template, loader
 from rolabola.models import *
 from rolabola.forms import SearchForm
 from rolabola.decorators import *
@@ -24,7 +25,7 @@ def home(request):
 
     last_sunday = (datetime.date.today()+dateutil.relativedelta.relativedelta(weekday=dateutil.relativedelta.SU(-1)))
     next_saturday = last_sunday + datetime.timedelta(days=6)
-    dates = [last_sunday + datetime.timedelta(days=x) for x in range((next_saturday-last_sunday).days + 1)]
+    dates = [last_sunday + datetime.timedelta(days=x) for x in range(7)]
     match_invitations_in_week = MatchInvitation.objects.filter(
         player__pk = request.user.player.pk,
         match__date__gte=timezone.make_aware(datetime.datetime.combine(last_sunday,datetime.time.min)),
@@ -41,6 +42,31 @@ def home(request):
         "match_invitations_in_week":match_invitations,
         "membership_requests":request.user.player.get_membership_requests_for_managed_groups()
     })
+
+@login_required
+@ajax
+def calendar_update_weekly(request):
+    base_date = timezone.make_aware(datetime.datetime(int(request.POST.get("year")),int(request.POST.get("month")),int(request.POST.get("day"))))
+    base_date += dateutil.relativedelta.relativedelta(weekday=dateutil.relativedelta.SU(-1))
+    base_date += datetime.timedelta(days=(1 if request.POST.get("next") != "0" else -1) * 7)
+    dates = [base_date + datetime.timedelta(days=x) for x in range(7)]
+    response = {
+        "year" : base_date.year,
+        "month" : base_date.month,
+        "day" : base_date.day,
+        "inner-fragments" : {}
+    }
+
+    match_invitations_in_week = request.user.player.get_match_invitations(start_date=base_date,end_date=base_date+datetime.timedelta(days=6))
+    match_invitations = {k:[] for k in [x.day for x in dates]}
+
+    match_invitation_template = loader.get_template("match_invitation_calendar.html")
+    for match_invitation in match_invitations_in_week:
+        match_invitations.get(match_invitation.match.date.day).append(match_invitation_template.render({"match_invitation":match_invitation}))
+    for date_query in dates:
+        response["inner-fragments"][".calendar-table.weekly th.%s" % date_query.strftime("%a").lower()] = "%s %s"  % (date_query.strftime("%a"),date_query.strftime("%d"))
+        response["inner-fragments"][".calendar-table.weekly td.%s" % date_query.strftime("%a").lower()] = "%s"  % "".join(match_invitations.get(date_query.day))
+    return response
 
 def login_and_register(request):
 

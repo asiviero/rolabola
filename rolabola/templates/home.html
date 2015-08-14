@@ -56,12 +56,18 @@
     </ul>
   </div>
   {% endif %}
-  <div id="schedule-box">
+  <div id="schedule-box" class="weekly">
+    <a class="btn-nav btn-prev btn-floating btn-tiny green" data-next="0" data-day="{% now 'd' %}" data-month="{% now 'm' %}" data-year="{% now 'Y' %}" data-url="{% url 'calendar-update-weekly' %}">
+      <i class="material-icons">chevron_left</i>
+    </a>
+    <a class="btn-nav btn-next btn-floating btn-tiny green" data-next="1" data-day="{% now 'd' %}" data-month="{% now 'm' %}" data-year="{% now 'Y' %}" data-url="{% url 'calendar-update-weekly' %}">
+      <i class="material-icons">chevron_right</i>
+    </a>
     <table class="calendar-table weekly">
       <thead>
         <tr>
           {% for weekday in dates %}
-            <th>
+            <th class="{{ weekday.label|lower }}">
               {{ weekday.label }}
               {{ weekday.date.day }}
             </th>
@@ -71,7 +77,7 @@
       <tbody>
         <tr>
           {% for weekday in dates %}
-            <td class="calendar-day">
+            <td class="calendar-day {{ weekday.label|lower }}">
                 {% for match_day in weekday.matches %}
                   <div class="match-invitation">
                     <a href="{% url "group-match" match_day.match.group.pk match_day.match.pk %}">

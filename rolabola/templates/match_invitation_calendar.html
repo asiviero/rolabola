@@ -1,0 +1,16 @@
+<div class="match-invitation">
+  <a href="{% url "group-match" match_invitation.match.group.pk match_invitation.match.pk %}">
+    {{match_invitation.match.group.name}}
+  </a>
+  <span class="time">
+    {{ match_invitation.match.date|date:"H:i" }}
+  </span>
+  <div class="confirm-container">
+    <a class="btn-floating btn-tiny green">
+      <i class="material-icons">done</i>
+    </a>
+    <a class="btn-floating btn-tiny red">
+      <i class="material-icons">clear</i>
+    </a>
+  </div>
+</div>
