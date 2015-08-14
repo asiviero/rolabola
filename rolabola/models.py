@@ -135,12 +135,14 @@ class Player(models.Model):
                 price=price
             )
 
-    def get_match_invitations(self,start_date=None,end_date=None):
+    def get_match_invitations(self,start_date=None,end_date=None,group=None):
         match_invitation_list = MatchInvitation.objects.filter(player__pk=self.pk)
         if not start_date is None:
             match_invitation_list = match_invitation_list.filter(match__date__gte=start_date)
         if not end_date is None:
             match_invitation_list = match_invitation_list.filter(match__date__lte=end_date)
+        if not group is None:
+            match_invitation_list = match_invitation_list.filter(match__group__pk=group.pk)
         return match_invitation_list
 
 
