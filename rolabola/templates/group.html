@@ -54,6 +54,9 @@
     </div>
     {% endif %}
   {% endif %}
+  <div id="calendar-motnhly-view">
+    {{ calendar_view }}
+  </div>
   {% if is_admin %}
   <a class="btn-floating btn-large btn-match-create green" href="{% url 'group-match-create' group.pk %}">
     <i class="material-icons">add</i>

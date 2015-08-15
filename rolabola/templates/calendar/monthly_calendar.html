@@ -1,0 +1,23 @@
+<table>
+  <thead>
+    <tr>
+      {% for label in days_label %}
+        <th>{{ label }}</th>
+      {% endfor %}
+    </tr>
+  </thead>
+  <tbody>
+    {% for week in weeks %}
+      <tr>
+        {% for day in week %}
+          <td>
+            <label class="{% if today.month == day.date.month %}bold{% else %}inactive{% endif %}">{{ day.date.day }}</label>
+            {% for match in day.match_list %}
+              {{ match }}
+            {% endfor %}
+          </td>
+        {% endfor %}
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
