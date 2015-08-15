@@ -868,14 +868,21 @@ class CalendarTest(StaticLiveServerTestCase):
         self.user_2.join_group(self.group_public)
 
         self.user_1.schedule_match(self.group_public,
-                                            date=timezone.make_aware(datetime.datetime.now()),
+                                            date=timezone.make_aware(datetime.datetime.today()),
                                             max_participants=15,
                                             min_participants=10,
                                             price=Decimal("20.0")
         )
 
         self.user_1.schedule_match(self.group_public,
-                                            date=timezone.make_aware(datetime.datetime.now() + datetime.timedelta(weeks=1)),
+                                            date=timezone.make_aware(datetime.datetime.today() + datetime.timedelta(days=7)),
+                                            max_participants=15,
+                                            min_participants=10,
+                                            price=Decimal("20.0")
+        )
+
+        self.user_1.schedule_match(self.group_private,
+                                            date=timezone.make_aware(datetime.datetime.today()),
                                             max_participants=15,
                                             min_participants=10,
                                             price=Decimal("20.0")
@@ -902,20 +909,23 @@ class CalendarTest(StaticLiveServerTestCase):
         self.assertEqual(len(calendar_view_rows[1].find_elements_by_tag_name("td")),7)
 
         # assert the days
-        last_sunday = str((datetime.date.today()+dateutil.relativedelta.relativedelta(weekday=dateutil.relativedelta.SU(-1))).day)
-        next_saturday = str((datetime.date.today()+dateutil.relativedelta.relativedelta(weekday=dateutil.relativedelta.SA(+1))).day)
+        last_sunday_date = datetime.date.today()+dateutil.relativedelta.relativedelta(weekday=dateutil.relativedelta.SU(-1))
+        last_sunday = str((last_sunday_date).day)
+        next_saturday = str((last_sunday_date+datetime.timedelta(days=6)).day)
+
         self.assertIn(last_sunday,calendar_view_rows[0].find_elements_by_tag_name("th")[0].text)
         self.assertIn(next_saturday,calendar_view_rows[0].find_elements_by_tag_name("th")[-1].text)
 
         match_invitations = self.browser.find_element_by_id("schedule-box").find_elements_by_class_name("match-invitation")
-        self.assertEqual(len(match_invitations),1)
+        self.assertEqual(len(match_invitations),2)
 
         # User sees next button and clicks it
         self.browser.find_element_by_id("schedule-box").find_element_by_css_selector("a.btn-next i.material-icons").click()
         time.sleep(3)
         # assert the days for next week
-        new_last_sunday = str((datetime.date.today()+dateutil.relativedelta.relativedelta(weekday=dateutil.relativedelta.SU(+1))).day)
-        new_next_saturday = str((datetime.date.today()+dateutil.relativedelta.relativedelta(weekday=dateutil.relativedelta.SA(+2))).day)
+        new_last_sunday = str((last_sunday_date+datetime.timedelta(days=7)).day)
+        new_next_saturday = str((last_sunday_date+datetime.timedelta(days=7)+datetime.timedelta(days=6)).day)
+        calendar_view_rows = self.browser.find_element_by_id("schedule-box").find_elements_by_tag_name("tr")
         self.assertIn(new_last_sunday,calendar_view_rows[0].find_elements_by_tag_name("th")[0].text)
         self.assertIn(new_next_saturday,calendar_view_rows[0].find_elements_by_tag_name("th")[-1].text)
 
@@ -925,19 +935,23 @@ class CalendarTest(StaticLiveServerTestCase):
         # User sees prev button and clicks it
         self.browser.find_element_by_id("schedule-box").find_element_by_css_selector("a.btn-prev i.material-icons").click()
         time.sleep(3)
-        last_sunday = str((datetime.date.today()+dateutil.relativedelta.relativedelta(weekday=dateutil.relativedelta.SU(-1))).day)
-        next_saturday = str((datetime.date.today()+dateutil.relativedelta.relativedelta(weekday=dateutil.relativedelta.SA(+1))).day)
+        last_sunday = str((last_sunday_date).day)
+        next_saturday = str((last_sunday_date+datetime.timedelta(days=6)).day)
+
+        calendar_view_rows = self.browser.find_element_by_id("schedule-box").find_elements_by_tag_name("tr")
         self.assertIn(last_sunday,calendar_view_rows[0].find_elements_by_tag_name("th")[0].text)
         self.assertIn(next_saturday,calendar_view_rows[0].find_elements_by_tag_name("th")[-1].text)
 
         match_invitations = self.browser.find_element_by_id("schedule-box").find_elements_by_class_name("match-invitation")
-        self.assertEqual(len(match_invitations),1)
+        self.assertEqual(len(match_invitations),2)
 
         # User sees prev button and clicks it again
         self.browser.find_element_by_id("schedule-box").find_element_by_css_selector("a.btn-prev i.material-icons").click()
         time.sleep(3)
-        last_sunday = str((datetime.date.today()+dateutil.relativedelta.relativedelta(weekday=dateutil.relativedelta.SU(-2))).day)
-        next_saturday = str((datetime.date.today()+dateutil.relativedelta.relativedelta(weekday=dateutil.relativedelta.SA(-1))).day)
+        last_sunday = str((last_sunday_date+datetime.timedelta(days=-7)).day)
+        next_saturday = str((last_sunday_date+datetime.timedelta(days=-7)+datetime.timedelta(days=6)).day)
+
+        calendar_view_rows = self.browser.find_element_by_id("schedule-box").find_elements_by_tag_name("tr")
         self.assertIn(last_sunday,calendar_view_rows[0].find_elements_by_tag_name("th")[0].text)
         self.assertIn(next_saturday,calendar_view_rows[0].find_elements_by_tag_name("th")[-1].text)
 

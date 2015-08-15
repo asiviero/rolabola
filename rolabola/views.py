@@ -57,7 +57,7 @@ def calendar_update_weekly(request):
         "inner-fragments" : {}
     }
 
-    match_invitations_in_week = request.user.player.get_match_invitations(start_date=base_date,end_date=base_date+datetime.timedelta(days=6))
+    match_invitations_in_week = request.user.player.get_match_invitations(start_date=base_date,end_date=base_date+datetime.timedelta(days=7))
     match_invitations = {k:[] for k in [x.day for x in dates]}
 
     match_invitation_template = loader.get_template("match_invitation_calendar.html")
