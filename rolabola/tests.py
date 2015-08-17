@@ -22,7 +22,7 @@ class FriendshipTest(TestCase):
 
         # Check if a FriendshipRequest was created
         friendship_request_list = FriendshipRequest.objects.all()
-        self.assertEqual(len(friendship_request_list),2)
+        self.assertEqual(len(friendship_request_list),1)
 
         # Check no Friendship were created
         friendship_list = Friendship.objects.all()
