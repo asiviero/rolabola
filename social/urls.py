@@ -26,5 +26,6 @@ urlpatterns = [
     url(r'^group/(\d+)/match$', views.group_match_create, name="group-match-create"),
     url(r'^group/(\d+)/match/(\d+)/$', views.group_match, name="group-match"),
     url(r'^calendar/update-weekly/$', views.calendar_update_weekly, name="calendar-update-weekly"),
+    url(r'^calendar/update-monthly/$', views.calendar_update_monthly, name="calendar-update-monthly"),
 
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT) + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

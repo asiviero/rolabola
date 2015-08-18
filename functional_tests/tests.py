@@ -968,7 +968,7 @@ class CalendarTest(StaticLiveServerTestCase):
 
         self.browser.get("%s/group/%s" % (self.live_server_url,self.group_public.pk))
 
-        calendar_view = self.browser.find_element_by_id("calendar-motnhly-view")
+        calendar_view = self.browser.find_element_by_id("calendar-monthly-view")
 
         # Assert headers
         header_cell_list = calendar_view.find_element_by_tag_name("thead").find_elements_by_tag_name("th")
@@ -986,5 +986,87 @@ class CalendarTest(StaticLiveServerTestCase):
         calendar_row_list = calendar_view.find_element_by_tag_name("tbody").find_elements_by_tag_name("tr")
 
         self.assertEqual(len(calendar_row_list),((next_saturday_after_last_date_of_month-sunday_before_first_day_of_month).days+1)/7)
-        match_invitations = self.browser.find_element_by_id("calendar-motnhly-view").find_elements_by_class_name("match-invitation")
+        match_invitations = self.browser.find_element_by_id("calendar-monthly-view").find_elements_by_class_name("match-invitation")
         self.assertEqual(len(match_invitations),2)
+
+    def test_calendar_navigation_monthly_on_group_page(self):
+        self.browser.get(self.live_server_url)
+
+        form_login = self.browser.find_element_by_id('form_login')
+        form_login.find_element_by_id("id_username").send_keys(self.user_1.user.username)
+        form_login.find_element_by_id("id_password").send_keys("123456")
+        form_login.find_element_by_css_selector("input[type='submit']").click()
+
+        self.browser.get("%s/group/%s" % (self.live_server_url,self.group_public.pk))
+
+        calendar_view = self.browser.find_element_by_id("calendar-monthly-view")
+
+        # User sees next button and clicks it
+        calendar_view.find_element_by_css_selector("a.btn-next i.material-icons").click()
+        time.sleep(3)
+        calendar_view = self.browser.find_element_by_id("calendar-monthly-view")
+
+        # Assert days in next month
+        header_cell_list = calendar_view.find_element_by_tag_name("thead").find_elements_by_tag_name("th")
+        self.assertEqual(len(header_cell_list),7)
+        self.assertIn("Sun",header_cell_list[0].text)
+        self.assertIn("Sat",header_cell_list[-1].text)
+
+        today_plus_one_month = datetime.date.today() + dateutil.relativedelta.relativedelta(months=1)
+        first_day_of_month = datetime.date(today_plus_one_month.year,today_plus_one_month.month,1)
+        sunday_before_first_day_of_month = first_day_of_month+dateutil.relativedelta.relativedelta(weekday=dateutil.relativedelta.SU(-1))
+        last_date_of_month = datetime.date(today_plus_one_month.year,today_plus_one_month.month,1)+dateutil.relativedelta.relativedelta(months=1)
+        next_saturday_after_last_date_of_month = last_date_of_month+dateutil.relativedelta.relativedelta(weekday=dateutil.relativedelta.SA(1))
+
+        calendar_row_list = calendar_view.find_element_by_tag_name("tbody").find_elements_by_tag_name("tr")
+
+        self.assertEqual(len(calendar_row_list),((next_saturday_after_last_date_of_month-sunday_before_first_day_of_month).days+1)/7)
+
+        self.assertIn(str(sunday_before_first_day_of_month.day),calendar_row_list[0].find_elements_by_tag_name("td")[0].text)
+        self.assertIn(str(next_saturday_after_last_date_of_month.day),calendar_row_list[-1].find_elements_by_tag_name("td")[-1].text)
+
+        # User clicks prev
+        calendar_view.find_element_by_css_selector("a.btn-prev i.material-icons").click()
+        time.sleep(3)
+        calendar_view = self.browser.find_element_by_id("calendar-monthly-view")
+
+        header_cell_list = calendar_view.find_element_by_tag_name("thead").find_elements_by_tag_name("th")
+        self.assertEqual(len(header_cell_list),7)
+        self.assertIn("Sun",header_cell_list[0].text)
+        self.assertIn("Sat",header_cell_list[-1].text)
+
+        today_plus_one_month = datetime.date.today()
+        first_day_of_month = datetime.date(today_plus_one_month.year,today_plus_one_month.month,1)
+        sunday_before_first_day_of_month = first_day_of_month+dateutil.relativedelta.relativedelta(weekday=dateutil.relativedelta.SU(-1))
+        last_date_of_month = datetime.date(today_plus_one_month.year,today_plus_one_month.month,1)+dateutil.relativedelta.relativedelta(months=1)
+        next_saturday_after_last_date_of_month = last_date_of_month+dateutil.relativedelta.relativedelta(weekday=dateutil.relativedelta.SA(1))
+
+        calendar_row_list = calendar_view.find_element_by_tag_name("tbody").find_elements_by_tag_name("tr")
+
+        self.assertEqual(len(calendar_row_list),((next_saturday_after_last_date_of_month-sunday_before_first_day_of_month).days+1)/7)
+
+        self.assertIn(str(sunday_before_first_day_of_month.day),calendar_row_list[0].find_elements_by_tag_name("td")[0].text)
+        self.assertIn(str(next_saturday_after_last_date_of_month.day),calendar_row_list[-1].find_elements_by_tag_name("td")[-1].text)
+
+        # User clicks prev again
+        calendar_view.find_element_by_css_selector("a.btn-prev i.material-icons").click()
+        time.sleep(3)
+        calendar_view = self.browser.find_element_by_id("calendar-monthly-view")
+
+        header_cell_list = calendar_view.find_element_by_tag_name("thead").find_elements_by_tag_name("th")
+        self.assertEqual(len(header_cell_list),7)
+        self.assertIn("Sun",header_cell_list[0].text)
+        self.assertIn("Sat",header_cell_list[-1].text)
+
+        today_plus_one_month = datetime.date.today() + dateutil.relativedelta.relativedelta(months=-1)
+        first_day_of_month = datetime.date(today_plus_one_month.year,today_plus_one_month.month,1)
+        sunday_before_first_day_of_month = first_day_of_month+dateutil.relativedelta.relativedelta(weekday=dateutil.relativedelta.SU(-1))
+        last_date_of_month = datetime.date(today_plus_one_month.year,today_plus_one_month.month,1)+dateutil.relativedelta.relativedelta(months=1)
+        next_saturday_after_last_date_of_month = last_date_of_month+dateutil.relativedelta.relativedelta(weekday=dateutil.relativedelta.SA(1))
+
+        calendar_row_list = calendar_view.find_element_by_tag_name("tbody").find_elements_by_tag_name("tr")
+
+        self.assertEqual(len(calendar_row_list),((next_saturday_after_last_date_of_month-sunday_before_first_day_of_month).days+1)/7)
+
+        self.assertIn(str(sunday_before_first_day_of_month.day),calendar_row_list[0].find_elements_by_tag_name("td")[0].text)
+        self.assertIn(str(next_saturday_after_last_date_of_month.day),calendar_row_list[-1].find_elements_by_tag_name("td")[-1].text)

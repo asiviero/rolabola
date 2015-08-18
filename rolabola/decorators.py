@@ -9,3 +9,11 @@ def group_admin_required(view_func):
             return view_func(request, *args, **kwargs)
         return HttpResponseForbidden()
     return _wrapped_view_func
+
+def group_membership_required(view_func):
+    def _wrapped_view_func(request, *args, **kwargs):
+        group = get_object_or_404(Group, pk=request.POST.get("group"))
+        if Membership.objects.filter(member__pk=request.user.player.pk,group__pk=group.pk).count():
+            return view_func(request, *args, **kwargs)
+        return HttpResponseForbidden()
+    return _wrapped_view_func

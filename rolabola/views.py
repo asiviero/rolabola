@@ -68,6 +68,46 @@ def calendar_update_weekly(request):
         response["inner-fragments"][".calendar-table.weekly td.%s" % date_query.strftime("%a").lower()] = "%s"  % "".join(match_invitations.get(date_query.day))
     return response
 
+@group_membership_required
+@login_required
+@ajax
+def calendar_update_monthly(request):
+    group = get_object_or_404(Group, pk=request.POST.get("group"))
+    base_date = timezone.make_aware(datetime.datetime(int(request.POST.get("year")),int(request.POST.get("month")),int(request.POST.get("day"))))
+    base_date += dateutil.relativedelta.relativedelta(months=(1 if request.POST.get("next") != "0" else -1))
+
+    first_day_of_month = datetime.date(base_date.year,base_date.month,1)
+    sunday_before_first_day_of_month = first_day_of_month+dateutil.relativedelta.relativedelta(weekday=dateutil.relativedelta.SU(-1))
+    last_date_of_month = datetime.date(base_date.year,base_date.month,1)+dateutil.relativedelta.relativedelta(months=1)
+    next_saturday_after_last_date_of_month = last_date_of_month+dateutil.relativedelta.relativedelta(weekday=dateutil.relativedelta.SA(+1))
+
+    days = [(sunday_before_first_day_of_month + datetime.timedelta(days=x)).strftime("%a") for x in range(7)]
+
+    dates = [sunday_before_first_day_of_month + datetime.timedelta(days=x) for x in range(0, (next_saturday_after_last_date_of_month-sunday_before_first_day_of_month).days+1)]
+    match_invitations_in_month = request.user.player.get_match_invitations(group=group,
+                                                                                                                     start_date=sunday_before_first_day_of_month,
+                                                                                                                     end_date=next_saturday_after_last_date_of_month)
+    match_templates = {k:[] for k in [x for x in dates]}
+
+    match_invitation_template = loader.get_template("match_invitation_calendar.html")
+    for match_invitation in match_invitations_in_month:
+        match_templates[match_invitation.match.date.date()].append(match_invitation_template.render({"match_invitation":match_invitation}))
+    dates = [{"date":x,"match_list":match_templates[x]} for x in dates]
+    weeks = [dates[x:x+7] for x in range(0, len(dates), 7)]
+
+    calendar_template = loader.get_template("calendar/monthly_calendar.html")
+    calendar_view = calendar_template.render({"days_label":days,"weeks":weeks,"today":base_date})
+
+    return {
+        "year" : base_date.year,
+        "month" : base_date.month,
+        "day" : base_date.day,
+        "inner-fragments": {
+            "#calendar-monthly-view .calendar-table" : calendar_view,
+            "#calendar-monthly-view .month-name" : base_date.strftime("%B")
+        }
+    }
+
 def login_and_register(request):
 
     if request.method == 'POST':
@@ -163,6 +203,8 @@ def group(request,group):
     weeks = [dates[x:x+7] for x in range(0, len(dates), 7)]
 
     calendar_template = loader.get_template("calendar/monthly_calendar.html")
+
+    print(group.pk)
     calendar_view = calendar_template.render({"days_label":days,"weeks":weeks,"today":today})
 
     return render(request, "group.html", {

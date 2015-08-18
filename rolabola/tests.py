@@ -2,6 +2,7 @@ from django.test import TestCase, Client
 from django.test.utils import override_settings
 from django.contrib.auth.models import User
 from django.utils import timezone
+from django.core.urlresolvers import reverse
 from rolabola.models import *
 from rolabola.factories import *
 from decimal import Decimal
@@ -612,3 +613,22 @@ class CalendarTest(TestCase):
 
         match_invitation_list_user_2 = user_2.get_match_invitations(group=group_1)
         self.assertEqual(len(match_invitation_list_user_2),1)
+
+    def test_user_cant_retrieve_monthly_calendar_from_group_he_is_not_a_member(self):
+        user_1 = PlayerFactory()
+        user_2 = PlayerFactory()
+        user_3 = PlayerFactory()
+        user_4 = PlayerFactory()
+        group_1 = user_1.create_group("Group 1", public=True)
+        group_2 = user_1.create_group("Group 2", public=False)
+        user_2.join_group(group_1)
+        user_2.join_group(group_2)
+        user_1.accept_request_group(group=group_2,user=user_2)
+        user_3.join_group(group_1)
+        user_3.join_group(group_2)
+
+        c = Client()
+        c.post("/login/",{"username":user_4.user.email,"password":"123456","form":"login_form"})
+        response = c.post(reverse("calendar-update-monthly"),{"group":group_2.pk,"year":"2015","month":"9","day":"5"},HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+
+        self.assertEqual(response.status_code,403)

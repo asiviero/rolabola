@@ -33,15 +33,18 @@
       })
     })
 
-    $("#schedule-box.weekly .btn-nav").click(function() {
+    $(".btn-nav").click(function() {
+      console.log("NAV")
       button_next = $(this).siblings(".btn-next").addBack()
       button_prev = $(this).siblings(".btn-prev").addBack()
       ajaxPost($(this).data("url"), {
         "year" : $(this).data("year"),
         "month" : $(this).data("month"),
         "day" : $(this).data("day"),
-        "next" : $(this).data("next")
+        "next" : $(this).data("next"),
+        "group" : $(this).data("group")
       }, function(content) {
+        console.log(content)
         button_prev.data("year",content.year)
         button_prev.data("month",content.month)
         button_prev.data("day",content.day)
