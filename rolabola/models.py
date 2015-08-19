@@ -145,11 +145,29 @@ class Player(models.Model):
             match_invitation_list = match_invitation_list.filter(match__group__pk=group.pk)
         return match_invitation_list
 
+    def accept_match_invitation(self,match,user=None):
+        if not user is None and user.pk != self.pk:
+            # Need to check if user is admin of match group
+            if not Membership.objects.filter(member__pk=self.id,role=Membership.GROUP_ADMIN,group__pk=match.group.pk).count():
+                return
+        else :
+            user = self
+        try:
+            if match.matchinvitation_set.get(player__pk=user.id):
+                match.matchinvitation_set.get(player__pk=user.id).confirm_presence()
+        except MatchInvitation.DoesNotExist as e:
+            pass
 
-    def accept_match_invitation(self,match):
+    def refuse_match_invitation(self,match,user=None):
+        if not user is None and user.pk != self.pk:
+            # Need to check if user is admin of match group
+            if not Membership.objects.filter(member__pk=self.id,role=Membership.GROUP_ADMIN,group__pk=match.group.pk).count():
+                return
+        else :
+            user = self
         try:
             if match.matchinvitation_set.get(player__pk=self.id):
-                match.matchinvitation_set.get(player__pk=self.id).confirm_presence()
+                match.matchinvitation_set.get(player__pk=self.id).confirm_absence()
         except MatchInvitation.DoesNotExist as e:
             pass
 
@@ -282,6 +300,10 @@ class Match(models.Model):
 
     def get_confirmed_list(self):
         return self.player_list.filter(matchinvitation__status=MatchInvitation.CONFIRMED)
+
+    def get_refused_list(self):
+        return self.player_list.filter(matchinvitation__status=MatchInvitation.ABSENCE_CONFIRMED)
+
 
     def __str__(self):
         return u"%s (%s)" % (self.group.name,self.date.strftime("%d/%m/%Y"))

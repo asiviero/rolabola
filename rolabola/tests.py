@@ -424,27 +424,6 @@ class MatchTest(TestCase):
         # Checks if no match invitations were issued
         self.assertEqual(MatchInvitation.objects.all().count(),0)
 
-    def test_user_can_accept_match_invitation(self):
-        user_1 = PlayerFactory()
-        user_2 = PlayerFactory()
-        user_3 = PlayerFactory()
-        group_1 = user_1.create_group("Group 1", public=True)
-        user_2.join_group(group_1)
-
-        # User Schedules a match
-        match = user_1.schedule_match(group_1,
-                                            date=timezone.make_aware(datetime.datetime.now() + datetime.timedelta(days=3)),
-                                            max_participants=15,
-                                            min_participants=10,
-                                            price=Decimal("20.0"))
-
-
-        user_2.accept_match_invitation(match=match)
-        # Check if user 3 can't confirm
-        user_3.accept_match_invitation(match=match)
-
-        self.assertEqual(len(match.get_confirmed_list()),1)
-
     def test_admin_user_can_schedule_match_only_for_his_own_groups(self):
         user_1 = PlayerFactory()
         user_2 = PlayerFactory()
@@ -632,3 +611,64 @@ class CalendarTest(TestCase):
         response = c.post(reverse("calendar-update-monthly"),{"group":group_2.pk,"year":"2015","month":"9","day":"5"},HTTP_X_REQUESTED_WITH='XMLHttpRequest')
 
         self.assertEqual(response.status_code,403)
+
+class MatchConfirmationTest(TestCase):
+
+    def setUp(self):
+        self.user_1 = PlayerFactory()
+        self.user_2 = PlayerFactory()
+        self.user_3 = PlayerFactory()
+        self.user_4 = PlayerFactory()
+        self.group_1 = self.user_1.create_group("Group 1", public=True)
+        self.user_2.join_group(self.group_1)
+        self.user_3.join_group(self.group_1)
+        self.match = self.user_1.schedule_match(self.group_1,
+                                            date=timezone.make_aware(datetime.datetime.now()),
+                                            max_participants=15,
+                                            min_participants=10,
+                                            price=Decimal("20.0"))
+
+    def test_user_can_accept_match_invitation(self):
+
+        self.user_2.accept_match_invitation(match=self.match)
+        # Check if user 3 can't confirm
+        self.user_3.accept_match_invitation(match=self.match)
+        # Check if user 4 can't confirm
+        self.user_4.accept_match_invitation(match=self.match)
+        self.user_4.refuse_match_invitation(match=self.match)
+
+        self.assertEqual(len(self.match.get_confirmed_list()),2)
+
+    def test_user_can_refuse_match_confirmation(self):
+
+        self.user_2.accept_match_invitation(match=self.match)
+        # Check if user 3 can't confirm
+        self.user_3.refuse_match_invitation(match=self.match)
+        # Check if user 4 can't confirm
+        self.user_4.accept_match_invitation(match=self.match)
+        self.user_4.refuse_match_invitation(match=self.match)
+
+        self.assertEqual(len(self.match.get_confirmed_list()),1)
+        self.assertEqual(len(self.match.get_refused_list()),1)
+
+    def test_admin_can_perform_actions_on_any_user(self):
+
+        self.user_1.accept_match_invitation(match=self.match,user=self.user_2)
+        self.user_1.refuse_match_invitation(match=self.match,user=self.user_3)
+        # Check if user 4 can't confirm
+        self.user_1.accept_match_invitation(match=self.match,user=self.user_4)
+        self.user_1.refuse_match_invitation(match=self.match,user=self.user_4)
+
+        self.assertEqual(len(self.match.get_confirmed_list()),1)
+        self.assertEqual(len(self.match.get_refused_list()),1)
+
+    def test_user_cant_perform_actions_on_any_user(self):
+
+        self.user_3.accept_match_invitation(match=self.match,user=self.user_2)
+        self.user_2.refuse_match_invitation(match=self.match,user=self.user_3)
+        # Check if user 4 can't confirm
+        self.user_4.accept_match_invitation(match=self.match,user=self.user_4)
+        self.user_4.refuse_match_invitation(match=self.match,user=self.user_4)
+
+        self.assertEqual(len(self.match.get_confirmed_list()),0)
+        self.assertEqual(len(self.match.get_refused_list()),0)
