@@ -769,3 +769,15 @@ class MatchConfirmationTest(TestCase):
 
         user_2_invitation = MatchInvitation.objects.get(match__pk=self.match_third.pk,player__pk=self.user_2.pk)
         self.assertEqual(user_2_invitation.status,MatchInvitation.CONFIRMED)
+
+    def test_automatic_confirmation_in_group(self):
+        self.user_2.toggle_automatic_confirmation_in_group(group=self.group_1)
+        new_match = self.user_1.schedule_match(self.group_1,
+                                            date=timezone.make_aware(datetime.datetime.now()),
+                                            max_participants=15,
+                                            min_participants=10,
+                                            price=Decimal("20.0"))
+        user_2_invitation = MatchInvitation.objects.get(match__pk=new_match.pk,player__pk=self.user_2.pk)
+        self.assertEqual(user_2_invitation.status,MatchInvitation.CONFIRMED)
+        user_3_invitation = MatchInvitation.objects.get(match__pk=new_match.pk,player__pk=self.user_3.pk)
+        self.assertEqual(user_3_invitation.status,MatchInvitation.NOT_CONFIRMED)

@@ -46,6 +46,15 @@ def match_didnt_reach_max_confirmations(view_func):
         pass
     return _wrapped_view_func
 
+def user_is_in_group(view_func):
+    def _wrapped_view_func(player, *args, **kwargs):
+        group = get_object_or_404(Match, pk=kwargs["group"].pk)
+        if Membership.objects.get(group__pk=group.pk,member__pk=player.pk):
+            return view_func(player, *args, **kwargs)
+        pass
+    return _wrapped_view_func
+
+
 class Player(models.Model):
     user = models.OneToOneField(User)
     nickname = models.CharField(max_length=255, default="")
@@ -193,6 +202,10 @@ class Player(models.Model):
     def revert_match_invitation(self,match,user=None):
         match.matchinvitation_set.get(player__pk=user.id).revert_confirmation()
 
+    @user_is_in_group
+    def toggle_automatic_confirmation_in_group(self,group):
+        Membership.objects.get(member__pk=self.pk,group__pk=group.pk).toggle_automatic_confirmation()
+
 User.player = property(lambda u: Player.objects.get_or_create(user=u)[0])
 
 
@@ -286,11 +299,16 @@ class Membership(models.Model):
         (GROUP_MEMBER, "Member"),
         (GROUP_ADMIN, "Admin"),
     )
+    automatic_confirmation = models.BooleanField(default=False)
     member = models.ForeignKey(Player)
     group = models.ForeignKey(Group)
     role = models.CharField(max_length=30,
                                             choices=ROLES_IN_GROUP,
                                             default=GROUP_MEMBER)
+
+    def toggle_automatic_confirmation(self):
+        self.automatic_confirmation = not self.automatic_confirmation
+        self.save()
 
 class MembershipRequest(models.Model):
     member = models.ForeignKey(Player, related_name="player_request")
@@ -312,6 +330,7 @@ def match_post_save(sender, **kwargs):
             MatchInvitation.objects.create(
                 player=player,
                 match=kwargs["instance"],
+                status=MatchInvitation.CONFIRMED if player.membership_set.get(group=kwargs["instance"].group.pk).automatic_confirmation else MatchInvitation.NOT_CONFIRMED
             )
 
 class Match(models.Model):
