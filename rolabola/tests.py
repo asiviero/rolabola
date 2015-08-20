@@ -7,6 +7,7 @@ from rolabola.models import *
 from rolabola.factories import *
 from decimal import Decimal
 from dateutil import rrule
+import dateutil.relativedelta
 from collections import Counter
 import urllib
 
@@ -639,6 +640,11 @@ class MatchConfirmationTest(TestCase):
                                             max_participants=15,
                                             min_participants=10,
                                             price=Decimal("20.0"))
+        self.match_restricted = self.user_1.schedule_match(self.group_1,
+                                            date=timezone.make_aware(datetime.datetime.now())+dateutil.relativedelta.relativedelta(hour=1),
+                                            max_participants=2,
+                                            min_participants=1,
+                                            price=Decimal("20.0"))
 
 
 
@@ -713,3 +719,30 @@ class MatchConfirmationTest(TestCase):
         user_2_invitation = MatchInvitation.objects.get(match__pk=self.match_third.pk,player__pk=self.user_2.pk)
 
         self.assertEqual(user_2_invitation.status,MatchInvitation.CONFIRMED)
+
+    def test_user_can_only_confirm_presence_if_match_hasnt_reached_max_confirmations(self):
+        self.user_1.accept_match_invitation(match=self.match_restricted)
+        self.user_2.accept_match_invitation(match=self.match_restricted)
+        self.user_3.accept_match_invitation(match=self.match_restricted)
+
+        user_1_invitation = MatchInvitation.objects.get(match__pk=self.match_restricted.pk,player__pk=self.user_1.pk)
+        user_2_invitation = MatchInvitation.objects.get(match__pk=self.match_restricted.pk,player__pk=self.user_2.pk)
+        user_3_invitation = MatchInvitation.objects.get(match__pk=self.match_restricted.pk,player__pk=self.user_3.pk)
+
+        self.assertEqual(user_1_invitation.status,MatchInvitation.CONFIRMED)
+        self.assertEqual(user_2_invitation.status,MatchInvitation.CONFIRMED)
+        self.assertEqual(user_3_invitation.status,MatchInvitation.NOT_CONFIRMED)
+
+        self.assertEqual(len(self.match_restricted.get_confirmed_list()),self.match_restricted.max_participants)
+
+    def test_user_can_revert_his_own_status(self):
+        self.user_2.accept_match_invitation(match=self.match)
+        user_2_invitation = MatchInvitation.objects.get(match__pk=self.match.pk,player__pk=self.user_2.pk)
+        self.assertEqual(user_2_invitation.status,MatchInvitation.CONFIRMED)
+        self.user_2.revert_match_invitation(match=self.match)
+        user_2_invitation = MatchInvitation.objects.get(match__pk=self.match.pk,player__pk=self.user_2.pk)
+        self.assertEqual(user_2_invitation.status,MatchInvitation.NOT_CONFIRMED)
+        self.user_2.revert_match_invitation(match=self.match)
+        user_2_invitation = MatchInvitation.objects.get(match__pk=self.match.pk,player__pk=self.user_2.pk)
+        self.assertEqual(user_2_invitation.status,MatchInvitation.CONFIRMED)
+    

@@ -21,16 +21,16 @@ import datetime
 import json
 
 def match_admin_required_if_user_provided(view_func):
-    def _wrapped_view_func(request, *args, **kwargs):
-        match = get_object_or_404(Match, group__pk=kwargs["match"].pk)
-        if Membership.objects.filter(member__pk=request.user.player.pk,group__pk=match.pk,role=Membership.GROUP_ADMIN).count() or not "user" in kwargs.keys():
-            return view_func(request, *args, **kwargs)
+    def _wrapped_view_func(player, *args, **kwargs):
+        match = get_object_or_404(Match, pk=kwargs["match"].pk)
+        if Membership.objects.filter(member__pk=player.pk,group__pk=match.pk,role=Membership.GROUP_ADMIN).count() or not "user" in kwargs.keys():
+            return view_func(player, *args, **kwargs)
         pass
     return _wrapped_view_func
 
 def match_invitation_exists(view_func):
     def _wrapped_view_func(player, *args, **kwargs):
-        match = get_object_or_404(Match, group__pk=kwargs["match"].pk)
+        match = get_object_or_404(Match, pk=kwargs["match"].pk)
         player_pk = kwargs["user"].pk if "user" in kwargs.keys() else player.pk
         kwargs["user"] = Player.objects.get(pk=player_pk)
         if match.matchinvitation_set.filter(player__pk=player_pk).count() or not "user" in kwargs.keys():
@@ -38,6 +38,13 @@ def match_invitation_exists(view_func):
         pass
     return _wrapped_view_func
 
+def match_didnt_reach_max_confirmations(view_func):
+    def _wrapped_view_func(player, *args, **kwargs):
+        match = get_object_or_404(Match, pk=kwargs["match"].pk)
+        if match.matchinvitation_set.filter(status=MatchInvitation.CONFIRMED).count() < match.max_participants:
+            return view_func(player, *args, **kwargs)
+        pass
+    return _wrapped_view_func
 
 class Player(models.Model):
     user = models.OneToOneField(User)
@@ -165,11 +172,12 @@ class Player(models.Model):
             match_invitation_list = match_invitation_list.filter(match__group__pk=group.pk)
         return match_invitation_list
 
+    @match_didnt_reach_max_confirmations
     @match_admin_required_if_user_provided
     @match_invitation_exists
     def accept_match_invitation(self,match,user=None):
         match.matchinvitation_set.get(player__pk=user.id).confirm_presence()
-        
+
     @match_admin_required_if_user_provided
     @match_invitation_exists
     def refuse_match_invitation(self,match,user=None):
@@ -179,6 +187,11 @@ class Player(models.Model):
     @match_invitation_exists
     def undo_match_invitation(self,match,user=None):
         match.matchinvitation_set.get(player__pk=user.id).undo_confirmation()
+
+    @match_admin_required_if_user_provided
+    @match_invitation_exists
+    def revert_match_invitation(self,match,user=None):
+        match.matchinvitation_set.get(player__pk=user.id).revert_confirmation()
 
 User.player = property(lambda u: Player.objects.get_or_create(user=u)[0])
 
@@ -357,4 +370,8 @@ class MatchInvitation(models.Model):
 
     def undo_confirmation(self):
         self.status = self.NOT_CONFIRMED
+        self.save()
+
+    def revert_confirmation(self):
+        self.status = self.NOT_CONFIRMED if self.status == self.CONFIRMED else self.CONFIRMED
         self.save()
