@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
+from django.shortcuts import get_object_or_404
 from django import forms
 from django.forms import ModelForm
 from django.db.models import Q
@@ -18,6 +19,25 @@ from social import settings
 
 import datetime
 import json
+
+def match_admin_required_if_user_provided(view_func):
+    def _wrapped_view_func(request, *args, **kwargs):
+        match = get_object_or_404(Match, group__pk=kwargs["match"].pk)
+        if Membership.objects.filter(member__pk=request.user.player.pk,group__pk=match.pk,role=Membership.GROUP_ADMIN).count() or not "user" in kwargs.keys():
+            return view_func(request, *args, **kwargs)
+        pass
+    return _wrapped_view_func
+
+def match_invitation_exists(view_func):
+    def _wrapped_view_func(player, *args, **kwargs):
+        match = get_object_or_404(Match, group__pk=kwargs["match"].pk)
+        player_pk = kwargs["user"].pk if "user" in kwargs.keys() else player.pk
+        kwargs["user"] = Player.objects.get(pk=player_pk)
+        if match.matchinvitation_set.filter(player__pk=player_pk).count() or not "user" in kwargs.keys():
+            return view_func(player, *args, **kwargs)
+        pass
+    return _wrapped_view_func
+
 
 class Player(models.Model):
     user = models.OneToOneField(User)
@@ -145,34 +165,25 @@ class Player(models.Model):
             match_invitation_list = match_invitation_list.filter(match__group__pk=group.pk)
         return match_invitation_list
 
+    @match_admin_required_if_user_provided
+    @match_invitation_exists
     def accept_match_invitation(self,match,user=None):
-        if not user is None and user.pk != self.pk:
-            # Need to check if user is admin of match group
-            if not Membership.objects.filter(member__pk=self.id,role=Membership.GROUP_ADMIN,group__pk=match.group.pk).count():
-                return
-        else :
-            user = self
-        try:
-            if match.matchinvitation_set.get(player__pk=user.id):
-                match.matchinvitation_set.get(player__pk=user.id).confirm_presence()
-        except MatchInvitation.DoesNotExist as e:
-            pass
-
+        match.matchinvitation_set.get(player__pk=user.id).confirm_presence()
+        
+    @match_admin_required_if_user_provided
+    @match_invitation_exists
     def refuse_match_invitation(self,match,user=None):
-        if not user is None and user.pk != self.pk:
-            # Need to check if user is admin of match group
-            if not Membership.objects.filter(member__pk=self.id,role=Membership.GROUP_ADMIN,group__pk=match.group.pk).count():
-                return
-        else :
-            user = self
-        try:
-            if match.matchinvitation_set.get(player__pk=self.id):
-                match.matchinvitation_set.get(player__pk=self.id).confirm_absence()
-        except MatchInvitation.DoesNotExist as e:
-            pass
+        match.matchinvitation_set.get(player__pk=user.id).confirm_absence()
+
+    @match_admin_required_if_user_provided
+    @match_invitation_exists
+    def undo_match_invitation(self,match,user=None):
+        match.matchinvitation_set.get(player__pk=user.id).undo_confirmation()
 
 User.player = property(lambda u: Player.objects.get_or_create(user=u)[0])
 
+
+#def user_admin_required_if_user_provided()
 
 class PlayerForm(ModelForm):
     class Meta:
@@ -342,4 +353,8 @@ class MatchInvitation(models.Model):
 
     def confirm_absence(self):
         self.status = self.ABSENCE_CONFIRMED
+        self.save()
+
+    def undo_confirmation(self):
+        self.status = self.NOT_CONFIRMED
         self.save()

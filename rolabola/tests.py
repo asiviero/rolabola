@@ -620,6 +620,7 @@ class MatchConfirmationTest(TestCase):
         self.user_3 = PlayerFactory()
         self.user_4 = PlayerFactory()
         self.group_1 = self.user_1.create_group("Group 1", public=True)
+        self.group_2 = self.user_1.create_group("Group 1", public=False)
         self.user_2.join_group(self.group_1)
         self.user_3.join_group(self.group_1)
         self.match = self.user_1.schedule_match(self.group_1,
@@ -627,6 +628,12 @@ class MatchConfirmationTest(TestCase):
                                             max_participants=15,
                                             min_participants=10,
                                             price=Decimal("20.0"))
+        self.match_private = self.user_1.schedule_match(self.group_2,
+                                            date=timezone.make_aware(datetime.datetime.now()),
+                                            max_participants=15,
+                                            min_participants=10,
+                                            price=Decimal("20.0"))
+
 
     def test_user_can_accept_match_invitation(self):
 
@@ -672,3 +679,16 @@ class MatchConfirmationTest(TestCase):
 
         self.assertEqual(len(self.match.get_confirmed_list()),0)
         self.assertEqual(len(self.match.get_refused_list()),0)
+
+    def test_user_can_undo_own_confirmation(self):
+        self.user_2.accept_match_invitation(match=self.match)
+        self.user_3.accept_match_invitation(match=self.match)
+
+        self.user_2.undo_match_invitation(match=self.match)
+        self.user_2.undo_match_invitation(match=self.match_private)
+        self.user_2.undo_match_invitation(match=self.match, user=self.user_3)
+
+        user_2_invitation = MatchInvitation.objects.get(match__pk=self.match.pk,player__pk=self.user_2.pk)
+        user_3_invitation = MatchInvitation.objects.get(match__pk=self.match.pk,player__pk=self.user_3.pk)
+        self.assertEqual(user_2_invitation.status,MatchInvitation.NOT_CONFIRMED)
+        self.assertEqual(user_3_invitation.status,MatchInvitation.CONFIRMED)
