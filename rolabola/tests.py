@@ -745,4 +745,11 @@ class MatchConfirmationTest(TestCase):
         self.user_2.revert_match_invitation(match=self.match)
         user_2_invitation = MatchInvitation.objects.get(match__pk=self.match.pk,player__pk=self.user_2.pk)
         self.assertEqual(user_2_invitation.status,MatchInvitation.CONFIRMED)
-    
+
+    def test_user_cant_revert_other_user_status(self):
+        self.user_2.accept_match_invitation(match=self.match)
+        user_2_invitation = MatchInvitation.objects.get(match__pk=self.match.pk,player__pk=self.user_2.pk)
+        self.assertEqual(user_2_invitation.status,MatchInvitation.CONFIRMED)
+        self.user_3.revert_match_invitation(match=self.match,user=self.user_2)
+        user_2_invitation = MatchInvitation.objects.get(match__pk=self.match.pk,player__pk=self.user_2.pk)
+        self.assertEqual(user_2_invitation.status,MatchInvitation.CONFIRMED)
