@@ -1070,3 +1070,78 @@ class CalendarTest(StaticLiveServerTestCase):
 
         self.assertIn(str(sunday_before_first_day_of_month.day),calendar_row_list[0].find_elements_by_tag_name("td")[0].text)
         self.assertIn(str(next_saturday_after_last_date_of_month.day),calendar_row_list[-1].find_elements_by_tag_name("td")[-1].text)
+
+class MatchConfirmationTest(StaticLiveServerTestCase):
+
+    def setUp(self):
+        self.browser = webdriver.Firefox()
+        self.browser.implicitly_wait(0.5)
+
+        # Create a user
+        self.user_1 = PlayerFactory()
+        self.user_1.user.set_password("123456")
+        self.user_1.user.save()
+
+        self.user_2 = PlayerFactory()
+        self.user_2.user.set_password("123456")
+        self.user_2.user.save()
+
+        # Create groups
+        self.group_public = self.user_1.create_group("Public Group",public = True)
+        self.group_private = self.user_1.create_group("Private Group",public = False)
+        self.user_2.join_group(self.group_public)
+
+        last_sunday = datetime.date.today()+dateutil.relativedelta.relativedelta(weekday=dateutil.relativedelta.SU(-1))
+
+        self.match_sunday = self.user_1.schedule_match(self.group_public,
+                                            date=timezone.make_aware(last_sunday),
+                                            max_participants=15,
+                                            min_participants=10,
+                                            price=Decimal("20.0")
+        )
+
+        self.match_monday = self.user_1.schedule_match(self.group_public,
+                                            date=timezone.make_aware(last_sunday + datetime.timedelta(days=1)),
+                                            max_participants=15,
+                                            min_participants=10,
+                                            price=Decimal("20.0")
+        )
+
+        self.match_tuesday = self.user_1.schedule_match(self.group_public,
+                                            date=timezone.make_aware(last_sunday + datetime.timedelta(days=2)),
+                                            max_participants=15,
+                                            min_participants=10,
+                                            price=Decimal("20.0")
+        )
+
+        self.match_wednesday = self.user_1.schedule_match(self.group_public,
+                                            date=timezone.make_aware(last_sunday + datetime.timedelta(days=3)),
+                                            max_participants=15,
+                                            min_participants=10,
+                                            price=Decimal("20.0")
+        )
+
+        self.user_2.accept_match_invitation(self.match_sunday)
+        self.user_2.refuse_match_invitation(self.match_tuesday)
+
+    def test_match_confirmation_in_home_page(self):
+        self.browser.get(self.live_server_url)
+
+        form_login = self.browser.find_element_by_id('form_login')
+        form_login.find_element_by_id("id_username").send_keys(self.user_1.user.username)
+        form_login.find_element_by_id("id_password").send_keys("123456")
+        form_login.find_element_by_css_selector("input[type='submit']").click()
+
+        match_invitations = self.browser.find_element_by_id("schedule-box").find_elements_by_class_name("match-invitation")
+
+        self.assertEqual(len(match_invitations),4)
+
+        # Sunday match is confirmed
+        sunday_match_invitation = match_invitations[0]
+
+
+        # Monday match is absence confirmed
+
+        # Tuesday match is to be confirmed
+
+        # Wednesday match is to be absence confirmed

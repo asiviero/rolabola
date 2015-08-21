@@ -33,8 +33,9 @@ def home(request):
     )
     match_invitations = {k:[] for k in [x.day for x in dates]}
 
+    match_invitation_template = loader.get_template("match_invitation_calendar.html")
     for match_invitation in match_invitations_in_week:
-        match_invitations.get(match_invitation.match.date.day).append(match_invitation)
+        match_invitations.get(match_invitation.match.date.day).append(match_invitation_template.render({"match_invitation":match_invitation}))
 
     return render(request, "home.html", {
         "search_form" : SearchForm,

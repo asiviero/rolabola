@@ -79,22 +79,7 @@
           {% for weekday in dates %}
             <td class="calendar-day {{ weekday.label|lower }}">
                 {% for match_day in weekday.matches %}
-                  <div class="match-invitation">
-                    <a href="{% url "group-match" match_day.match.group.pk match_day.match.pk %}">
-                      {{match_day.match.group.name}}
-                    </a>
-                    <span class="time">
-                      {{ match_day.match.date|date:"H:i" }}
-                    </span>
-                    <div class="confirm-container">
-                      <a class="btn-floating btn-tiny green">
-                        <i class="material-icons">done</i>
-                      </a>
-                      <a class="btn-floating btn-tiny red">
-                        <i class="material-icons">clear</i>
-                      </a>
-                    </div>
-                  </div>
+                  {{ match_day }}
                 {% endfor %}
             </td>
           {% endfor %}
