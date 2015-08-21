@@ -22,7 +22,6 @@ from django.utils import timezone
 # Create your views here.
 @login_required
 def home(request):
-
     last_sunday = (datetime.date.today()+dateutil.relativedelta.relativedelta(weekday=dateutil.relativedelta.SU(-1)))
     next_saturday = last_sunday + datetime.timedelta(days=6)
     dates = [last_sunday + datetime.timedelta(days=x) for x in range(7)]
@@ -322,3 +321,31 @@ def group_match(request,group,match):
         "group":group,
         "match": match
     })
+
+@login_required
+@ajax
+def group_match_accept(request,group,match):
+    group=get_object_or_404(Group,pk=group)
+    match=get_object_or_404(Match,pk=match)
+    request.user.player.accept_match_invitation(match=match)
+    match_invitation_template = loader.get_template("match_invitation_calendar.html")
+    response = {
+        "inner-fragments" : {
+            ".match-invitation[data-match='%s']" % match.pk : match_invitation_template.render({"match_invitation":MatchInvitation.objects.get(player__pk=request.user.player.pk,match__pk=match.pk)})
+        }
+    }
+    return response
+
+@login_required
+@ajax
+def group_match_reject(request,group,match):
+    group=get_object_or_404(Group,pk=group)
+    match=get_object_or_404(Match,pk=match)
+    request.user.player.refuse_match_invitation(match=match)
+    match_invitation_template = loader.get_template("match_invitation_calendar.html")
+    response = {
+        "inner-fragments" : {
+            ".match-invitation[data-match='%s']" % match.pk : match_invitation_template.render({"match_invitation":MatchInvitation.objects.get(player__pk=request.user.player.pk,match__pk=match.pk)})
+        }
+    }
+    return response

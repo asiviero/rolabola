@@ -1,5 +1,13 @@
 {% extends "baserb.html" %}
-
+{% block side_pane_block %}
+  <div class="confirmed-list">
+    <ul>
+      {% for confirmed_player in match.get_confirmed_list %}
+        <li>{{ confirmed_player }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+{% endblock %}
 {% block main_content_block %}
   <div id="accept-wrapper">
     <button>Yes</button>

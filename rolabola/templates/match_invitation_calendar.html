@@ -1,4 +1,4 @@
-<div class="match-invitation">
+<div class="match-invitation" data-match="{{match_invitation.match.pk}}">
   <a href="{% url "group-match" match_invitation.match.group.pk match_invitation.match.pk %}">
     {{match_invitation.match.group.name}}
   </a>
@@ -6,11 +6,25 @@
     {{ match_invitation.match.date|date:"H:i" }}
   </span>
   <div class="confirm-container">
-    <a class="btn-floating btn-tiny green">
-      <i class="material-icons">done</i>
-    </a>
-    <a class="btn-floating btn-tiny red">
-      <i class="material-icons">clear</i>
-    </a>
+    {% if match_invitation.status == match_invitation.CONFIRMED %}
+      <a class="btn disabled">
+        GOING
+      </a>
+    {% elif match_invitation.status == match_invitation.ABSENCE_CONFIRMED %}
+      <a class="btn disabled">
+        NOT GOING
+      </a>
+    {% elif match_invitation.match.get_confirmed_list.count == match_invitation.match.max_participants %}
+        <a class="btn disabled">
+          FULL
+        </a>
+    {% else %}
+      <a class="btn btn-floating btn-tiny green btn-accept-invitation" data-url="{% url "group-match-accept" match_invitation.match.group.pk match_invitation.match.pk %}">
+        <i class="material-icons">done</i>
+      </a>
+      <a class="btn btn-floating btn-tiny red btn-refuse-invitation" data-url="{% url "group-match-reject" match_invitation.match.group.pk match_invitation.match.pk %}">
+        <i class="material-icons">clear</i>
+      </a>
+    {% endif %}
   </div>
 </div>

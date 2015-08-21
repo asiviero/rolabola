@@ -10,6 +10,7 @@ from decimal import Decimal
 from rolabola.factories import *
 import datetime
 import dateutil
+import dateutil.relativedelta
 import time
 
 class NewVisitorTest(StaticLiveServerTestCase):
@@ -1086,12 +1087,12 @@ class MatchConfirmationTest(StaticLiveServerTestCase):
         self.user_2.user.set_password("123456")
         self.user_2.user.save()
 
+        last_sunday = datetime.datetime.today()+dateutil.relativedelta.relativedelta(weekday=dateutil.relativedelta.SU(-1))
+
         # Create groups
         self.group_public = self.user_1.create_group("Public Group",public = True)
         self.group_private = self.user_1.create_group("Private Group",public = False)
         self.user_2.join_group(self.group_public)
-
-        last_sunday = datetime.date.today()+dateutil.relativedelta.relativedelta(weekday=dateutil.relativedelta.SU(-1))
 
         self.match_sunday = self.user_1.schedule_match(self.group_public,
                                             date=timezone.make_aware(last_sunday),
@@ -1121,27 +1122,105 @@ class MatchConfirmationTest(StaticLiveServerTestCase):
                                             price=Decimal("20.0")
         )
 
-        self.user_2.accept_match_invitation(self.match_sunday)
-        self.user_2.refuse_match_invitation(self.match_tuesday)
+        self.match_thursday = self.user_1.schedule_match(self.group_public,
+                                            date=timezone.make_aware(last_sunday + datetime.timedelta(days=4)),
+                                            max_participants=0,
+                                            min_participants=0,
+                                            price=Decimal("20.0")
+        )
+
+        self.user_2.accept_match_invitation(match=self.match_sunday)
+        self.user_2.refuse_match_invitation(match=self.match_monday)
+
+    def tearDown(self):
+        self.browser.quit()
 
     def test_match_confirmation_in_home_page(self):
         self.browser.get(self.live_server_url)
 
         form_login = self.browser.find_element_by_id('form_login')
-        form_login.find_element_by_id("id_username").send_keys(self.user_1.user.username)
+        form_login.find_element_by_id("id_username").send_keys(self.user_2.user.username)
         form_login.find_element_by_id("id_password").send_keys("123456")
         form_login.find_element_by_css_selector("input[type='submit']").click()
 
         match_invitations = self.browser.find_element_by_id("schedule-box").find_elements_by_class_name("match-invitation")
 
-        self.assertEqual(len(match_invitations),4)
+        self.assertEqual(len(match_invitations),5)
 
         # Sunday match is confirmed
         sunday_match_invitation = match_invitations[0]
-
+        buttons = sunday_match_invitation.find_element_by_class_name("confirm-container").find_elements_by_css_selector("a.disabled")
+        self.assertEqual(len(buttons),1)
+        self.assertIn("GOING",buttons[0].text)
 
         # Monday match is absence confirmed
+        monday_match_invitation = match_invitations[1]
+        buttons = monday_match_invitation.find_element_by_class_name("confirm-container").find_elements_by_css_selector("a.disabled")
+        self.assertEqual(len(buttons),1)
+        self.assertIn("NOT GOING",buttons[0].text)
 
         # Tuesday match is to be confirmed
+        tuesday_match_invitation = match_invitations[-3]
+        buttons = tuesday_match_invitation.find_element_by_class_name("confirm-container")
 
+        # User sees two links inside them
+        links = buttons.find_elements_by_tag_name("a")
+        self.assertEqual(len(links),2)
+        # Check if buttons are with the right labels
+        self.assertEqual(links[0].find_element_by_tag_name("i").text,"done")
+        self.assertEqual(links[1].find_element_by_tag_name("i").text,"clear")
+        links[0].click()
+        time.sleep(3)
+
+        # Reload invitations
+        match_invitations = self.browser.find_element_by_id("schedule-box").find_elements_by_class_name("match-invitation")
+        tuesday_match_invitation = match_invitations[-3]
+        buttons = tuesday_match_invitation.find_element_by_class_name("confirm-container").find_elements_by_css_selector("a.disabled")
+        self.assertEqual(len(buttons),1)
+        self.assertIn("GOING",buttons[0].text)
+
+        time.sleep(1)
         # Wednesday match is to be absence confirmed
+        match_invitations = self.browser.find_element_by_id("schedule-box").find_elements_by_class_name("match-invitation")
+        wednesday_match_invitation = match_invitations[-2]
+        buttons = wednesday_match_invitation.find_element_by_class_name("confirm-container")
+
+        # User sees two links inside them
+        links = buttons.find_elements_by_tag_name("a")
+        self.assertEqual(len(links),2)
+        # Check if buttons are with the right labels
+        self.assertEqual(links[0].find_element_by_tag_name("i").text,"done")
+        self.assertEqual(links[1].find_element_by_tag_name("i").text,"clear")
+        links[1].click()
+        time.sleep(3)
+
+        # Reload invitations
+        match_invitations = self.browser.find_element_by_id("schedule-box").find_elements_by_class_name("match-invitation")
+        wednesday_match_invitation = match_invitations[-2]
+        buttons = wednesday_match_invitation.find_element_by_class_name("confirm-container").find_elements_by_css_selector("a.disabled")
+        self.assertEqual(len(buttons),1)
+        self.assertIn("NOT GOING",buttons[0].text)
+
+        match_invitations = self.browser.find_element_by_id("schedule-box").find_elements_by_class_name("match-invitation")
+        thursday_match_invitation = match_invitations[-1]
+        buttons = thursday_match_invitation.find_element_by_class_name("confirm-container").find_elements_by_css_selector("a.disabled")
+        self.assertEqual(len(buttons),1)
+        self.assertIn("FULL",buttons[0].text)
+
+
+        # Check the match pages
+        self.browser.get("%s/group/%d/match/%d" % (self.live_server_url,self.group_public.id,self.match_sunday.pk))
+        confirmed_list = self.browser.find_element_by_class_name("confirmed-list")
+        self.assertIn(str(self.user_2),confirmed_list.text)
+
+        self.browser.get("%s/group/%d/match/%d" % (self.live_server_url,self.group_public.id,self.match_monday.pk))
+        confirmed_list = self.browser.find_element_by_class_name("confirmed-list")
+        self.assertNotIn(str(self.user_2),confirmed_list.text)
+
+        self.browser.get("%s/group/%d/match/%d" % (self.live_server_url,self.group_public.id,self.match_tuesday.pk))
+        confirmed_list = self.browser.find_element_by_class_name("confirmed-list")
+        self.assertIn(str(self.user_2),confirmed_list.text)
+
+        self.browser.get("%s/group/%d/match/%d" % (self.live_server_url,self.group_public.id,self.match_wednesday.pk))
+        confirmed_list = self.browser.find_element_by_class_name("confirmed-list")
+        self.assertNotIn(str(self.user_2),confirmed_list.text)

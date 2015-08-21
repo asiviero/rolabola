@@ -53,6 +53,14 @@
         button_next.data("day",content.day)
       })
     })
+
+    $(".confirm-container .btn").click(function() {
+      var url = $(this).data("url")
+      ajaxGet(url, function(content){
+        console.log(content)
+        //button.closest("li").remove()
+      })
+    })
   })
 
 
