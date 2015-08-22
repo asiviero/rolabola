@@ -347,6 +347,9 @@ class Match(models.Model):
     def get_refused_list(self):
         return self.player_list.filter(matchinvitation__status=MatchInvitation.ABSENCE_CONFIRMED)
 
+    def get_unanswered_list(self):
+        return self.player_list.filter(matchinvitation__status=MatchInvitation.NOT_CONFIRMED)
+
 
     def __str__(self):
         return u"%s (%s)" % (self.group.name,self.date.strftime("%d/%m/%Y"))

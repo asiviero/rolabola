@@ -1224,3 +1224,26 @@ class MatchConfirmationTest(StaticLiveServerTestCase):
         self.browser.get("%s/group/%d/match/%d" % (self.live_server_url,self.group_public.id,self.match_wednesday.pk))
         confirmed_list = self.browser.find_element_by_class_name("confirmed-list")
         self.assertNotIn(str(self.user_2),confirmed_list.text)
+
+    def test_confirmed_list_in_match_page(self):
+        self.browser.get(self.live_server_url)
+
+        form_login = self.browser.find_element_by_id('form_login')
+        form_login.find_element_by_id("id_username").send_keys(self.user_2.user.username)
+        form_login.find_element_by_id("id_password").send_keys("123456")
+        form_login.find_element_by_css_selector("input[type='submit']").click()
+
+        self.browser.get("%s/group/%d/match/%d" % (self.live_server_url,self.group_public.id,self.match_sunday.pk))
+        confirmed_list = self.browser.find_element_by_class_name("confirmed-list")
+        not_confirmed_list = self.browser.find_element_by_class_name("not-confirmed-list")
+        disabled_list = not_confirmed_list.find_elements_by_class_name("disabled")
+        self.assertIn(str(self.user_2),confirmed_list.text)
+        self.assertNotIn(str(self.user_2),not_confirmed_list.text)
+        self.assertEqual(len(disabled_list),0)
+
+        self.browser.get("%s/group/%d/match/%d" % (self.live_server_url,self.group_public.id,self.match_monday.pk))
+        confirmed_list = self.browser.find_element_by_class_name("confirmed-list")
+        not_confirmed_list = self.browser.find_element_by_class_name("not-confirmed-list")
+        disabled_list = not_confirmed_list.find_elements_by_class_name("disabled")
+        self.assertNotIn(str(self.user_2),confirmed_list.text)
+        self.assertIn(str(self.user_2)," ".join([x.text for x in disabled_list]))
