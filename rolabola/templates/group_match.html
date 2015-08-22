@@ -2,22 +2,8 @@
 {% block side_pane_block %}
 {% endblock %}
 {% block main_content_block %}
-  <div class="confirmed-list">
-    <ul>
-      {% for confirmed_player in match.get_confirmed_list %}
-        <li>{{ confirmed_player }}</li>
-      {% endfor %}
-    </ul>
-  </div>
-  <div class="not-confirmed-list">
-    <ul>
-      {% for not_confirmed_player in match.get_unanswered_list %}
-        <li>{{ not_confirmed_player }}</li>
-      {% endfor %}
-      {% for refused_player in match.get_refused_list %}
-        <li class="disabled">{{ refused_player }}</li>
-      {% endfor %}
-    </ul>
+  <div class="confirmed-list-wrapper">
+    {{ confirmed_list }}
   </div>
   <div id="accept-wrapper">
     <button>Yes</button>

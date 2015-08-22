@@ -317,10 +317,22 @@ def group_match_create(request,group):
 def group_match(request,group,match):
     group=get_object_or_404(Group,pk=group)
     match=get_object_or_404(Match,pk=match)
-    return render(request, "group_match.html", {
+    context = {
         "group":group,
-        "match": match
-    })
+        "match": match,
+    }
+
+    if request.user.player in match.get_unanswered_list():
+        context["header"] = request.user.player
+        context["unaswered"] = match.get_unanswered_list().exclude(pk=request.user.player.pk)
+    else:
+        context["header"] = None
+        context["unaswered"] = match.get_unanswered_list()
+
+    match_confirmed_list_template = loader.get_template("match/match_confirmed_list.html")
+    context["confirmed_list"] = match_confirmed_list_template.render(context)
+
+    return render(request, "group_match.html", context)
 
 @login_required
 @ajax
@@ -329,9 +341,24 @@ def group_match_accept(request,group,match):
     match=get_object_or_404(Match,pk=match)
     request.user.player.accept_match_invitation(match=match)
     match_invitation_template = loader.get_template("match_invitation_calendar.html")
+
+    match_confirmed_list_template = loader.get_template("match/match_confirmed_list.html")
+    context = {
+        "group":group,
+        "match": match,
+    }
+
+    if request.user.player in match.get_unanswered_list():
+        context["header"] = request.user.player
+        context["unaswered"] = match.get_unanswered_list().exclude(pk=request.user.player.pk)
+    else:
+        context["header"] = None
+        context["unaswered"] = match.get_unanswered_list()
+
     response = {
         "inner-fragments" : {
-            ".match-invitation[data-match='%s']" % match.pk : match_invitation_template.render({"match_invitation":MatchInvitation.objects.get(player__pk=request.user.player.pk,match__pk=match.pk)})
+            ".match-invitation[data-match='%s']" % match.pk : match_invitation_template.render({"match_invitation":MatchInvitation.objects.get(player__pk=request.user.player.pk,match__pk=match.pk)}),
+            ".confirmed-list-wrapper" : match_confirmed_list_template.render(context)
         }
     }
     return response
@@ -343,9 +370,25 @@ def group_match_reject(request,group,match):
     match=get_object_or_404(Match,pk=match)
     request.user.player.refuse_match_invitation(match=match)
     match_invitation_template = loader.get_template("match_invitation_calendar.html")
+
+    match_confirmed_list_template = loader.get_template("match/match_confirmed_list.html")
+    context = {
+        "group":group,
+        "match": match,
+    }
+
+    if request.user.player in match.get_unanswered_list():
+        context["header"] = request.user.player
+        context["unaswered"] = match.get_unanswered_list().exclude(pk=request.user.player.pk)
+    else:
+        context["header"] = None
+        context["unaswered"] = match.get_unanswered_list()
+
     response = {
         "inner-fragments" : {
-            ".match-invitation[data-match='%s']" % match.pk : match_invitation_template.render({"match_invitation":MatchInvitation.objects.get(player__pk=request.user.player.pk,match__pk=match.pk)})
+            ".match-invitation[data-match='%s']" % match.pk : match_invitation_template.render({"match_invitation":MatchInvitation.objects.get(player__pk=request.user.player.pk,match__pk=match.pk)}),
+            ".confirmed-list-wrapper" : match_confirmed_list_template.render(context)
         }
     }
+    
     return response

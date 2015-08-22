@@ -1247,3 +1247,96 @@ class MatchConfirmationTest(StaticLiveServerTestCase):
         disabled_list = not_confirmed_list.find_elements_by_class_name("disabled")
         self.assertNotIn(str(self.user_2),confirmed_list.text)
         self.assertIn(str(self.user_2)," ".join([x.text for x in disabled_list]))
+
+    def test_match_confirmation_in_match_page(self):
+        self.browser.get(self.live_server_url)
+
+        form_login = self.browser.find_element_by_id('form_login')
+        form_login.find_element_by_id("id_username").send_keys(self.user_2.user.username)
+        form_login.find_element_by_id("id_password").send_keys("123456")
+        form_login.find_element_by_css_selector("input[type='submit']").click()
+
+        self.browser.get("%s/group/%d/match/%d" % (self.live_server_url,self.group_public.id,self.match_tuesday.pk))
+
+        time.sleep(3)
+        # User sees his name at the top of the list
+        confirmed_list = self.browser.find_element_by_class_name("confirmed-list")
+        confirmed_first = confirmed_list.find_elements_by_tag_name("li")[0]
+        self.assertIn(str(self.user_2),confirmed_first.text)
+        not_confirmed_list = self.browser.find_element_by_class_name("not-confirmed-list")
+        self.assertNotIn(str(self.user_2),not_confirmed_list.text)
+
+        # User sees the buttons beside his name
+        button_container = confirmed_first.find_element_by_class_name("confirm-container")
+
+        # User sees two links inside them
+        links = button_container.find_elements_by_tag_name("a")
+        self.assertEqual(len(links),2)
+
+        # Check if buttons are with the right labels
+        self.assertEqual(links[0].find_element_by_tag_name("i").text,"done")
+        self.assertEqual(links[1].find_element_by_tag_name("i").text,"clear")
+
+        links[0].click()
+        time.sleep(3)
+
+        # User is still at the confirmed list, but the buttons are gone
+        confirmed_list = self.browser.find_element_by_class_name("confirmed-list")
+        self.assertIn(str(self.user_2),confirmed_list.text)
+
+        for row in confirmed_list.find_elements_by_tag_name("li"):
+            if str(self.user_2) in row.text:
+                    button_container = row.find_elements_by_class_name("confirm-container")
+                    # User sees no links inside them
+                    self.assertEqual(len(button_container),0)
+
+        self.browser.get("%s/group/%d/match/%d" % (self.live_server_url,self.group_public.id,self.match_wednesday.pk))
+
+        time.sleep(3)
+        # User sees his name at the top of the list
+        confirmed_list = self.browser.find_element_by_class_name("confirmed-list")
+        confirmed_first = confirmed_list.find_elements_by_tag_name("li")[0]
+        self.assertIn(str(self.user_2),confirmed_first.text)
+
+        # User sees the buttons beside his name
+        button_container = confirmed_first.find_element_by_class_name("confirm-container")
+
+        # User sees two links inside them
+        links = button_container.find_elements_by_tag_name("a")
+        self.assertEqual(len(links),2)
+
+        # Check if buttons are with the right labels
+        self.assertEqual(links[0].find_element_by_tag_name("i").text,"done")
+        self.assertEqual(links[1].find_element_by_tag_name("i").text,"clear")
+
+        links[1].click()
+        time.sleep(3)
+
+        # User is still at the confirmed list, but the buttons are gone
+        confirmed_list = self.browser.find_element_by_class_name("confirmed-list")
+        not_confirmed_list = self.browser.find_element_by_class_name("not-confirmed-list")
+        self.assertIn(str(self.user_2),not_confirmed_list.text)
+        disabled_list = not_confirmed_list.find_elements_by_class_name("disabled")
+        self.assertIn(str(self.user_2)," ".join([x.text for x in disabled_list]))
+
+        self.assertNotIn(str(self.user_2),confirmed_list.text)
+
+        for row in disabled_list:
+            if str(self.user_2) in row.text:
+                    button_container = row.find_elements_by_class_name("confirm-container")
+                    # User sees no links inside them
+                    self.assertEqual(len(button_container),0)
+
+        # Now checks in the calendar in the home page
+        self.browser.get(self.live_server_url)
+
+        match_invitations = self.browser.find_element_by_id("schedule-box").find_elements_by_class_name("match-invitation")
+        tuesday_match_invitation = match_invitations[-3]
+        buttons = tuesday_match_invitation.find_element_by_class_name("confirm-container").find_elements_by_css_selector("a.disabled")
+        self.assertEqual(len(buttons),1)
+        self.assertIn("GOING",buttons[0].text)
+
+        wednesday_match_invitation = match_invitations[-2]
+        buttons = wednesday_match_invitation.find_element_by_class_name("confirm-container").find_elements_by_css_selector("a.disabled")
+        self.assertEqual(len(buttons),1)
+        self.assertIn("NOT GOING",buttons[0].text)

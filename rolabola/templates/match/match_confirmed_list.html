@@ -1,0 +1,30 @@
+<div class="confirmed-list">
+  <ul>
+    {% if header %}
+      <li class="header">
+        {{ header }}
+        <div class="confirm-container">
+          <a class="btn btn-floating btn-tiny green btn-accept-invitation" data-url="{% url "group-match-accept" group.pk match.pk %}">
+            <i class="material-icons">done</i>
+          </a>
+          <a class="btn btn-floating btn-tiny red btn-refuse-invitation" data-url="{% url "group-match-reject" group.pk match.pk %}">
+            <i class="material-icons">clear</i>
+          </a>
+        </div>
+      </li>
+    {% endif %}
+    {% for confirmed_player in match.get_confirmed_list %}
+      <li>{{ confirmed_player }}</li>
+    {% endfor %}
+  </ul>
+</div>
+<div class="not-confirmed-list">
+  <ul>
+    {% for not_confirmed_player in unaswered %}
+      <li>{{ not_confirmed_player }}</li>
+    {% endfor %}
+    {% for refused_player in match.get_refused_list %}
+      <li class="disabled">{{ refused_player }}</li>
+    {% endfor %}
+  </ul>
+</div>
