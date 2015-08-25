@@ -205,6 +205,7 @@ class Player(models.Model):
     @user_is_in_group
     def toggle_automatic_confirmation_in_group(self,group):
         Membership.objects.get(member__pk=self.pk,group__pk=group.pk).toggle_automatic_confirmation()
+        return Membership.objects.get(member__pk=self.pk,group__pk=group.pk).automatic_confirmation
 
 User.player = property(lambda u: Player.objects.get_or_create(user=u)[0])
 
@@ -286,11 +287,41 @@ def schedule_match_task(player,group,date,max_participants,min_participants,pric
     except Group.DoesNotExist:
         pass
 
+@task(name="send_match_invitation_task")
+def send_match_invitation_task(player,match,group):
+    try:
+        player = Player.objects.get(pk=player)
+        match = Match.objects.get(pk=match)
+        group = Group.objects.get(pk=group)
+        MatchInvitation.objects.create(
+            player=player,
+            match=match,
+            status=MatchInvitation.CONFIRMED if player.membership_set.get(group=group).automatic_confirmation else MatchInvitation.NOT_CONFIRMED
+        )
+        logger.info("Scheduling...")
+    except Player.DoesNotExist:
+        pass
+    except Group.DoesNotExist:
+        pass
+    except Match.DoesNotExist:
+        pass
+
 
 class GroupForm(ModelForm):
     class Meta:
         model = Group
         fields = ["name", "public", "picture"]
+
+def membership_post_save(sender, **kwargs):
+    if kwargs["created"]:
+        match_list = Match.objects.filter(group__pk=kwargs["instance"].group.pk,date__gte=datetime.date.today())
+        player = kwargs["instance"].member
+        for match in match_list:
+            send_match_invitation_task.delay(
+                player = player.pk,
+                match = match.pk,
+                group = match.group.pk
+            )
 
 class Membership(models.Model):
     GROUP_MEMBER = "group_member"
@@ -309,6 +340,7 @@ class Membership(models.Model):
     def toggle_automatic_confirmation(self):
         self.automatic_confirmation = not self.automatic_confirmation
         self.save()
+post_save.connect(membership_post_save, sender=Membership)
 
 class MembershipRequest(models.Model):
     member = models.ForeignKey(Player, related_name="player_request")
@@ -327,10 +359,10 @@ class MembershipRequest(models.Model):
 def match_post_save(sender, **kwargs):
     if kwargs["created"]:
         for player in kwargs["instance"].group.member_list.all():
-            MatchInvitation.objects.create(
-                player=player,
-                match=kwargs["instance"],
-                status=MatchInvitation.CONFIRMED if player.membership_set.get(group=kwargs["instance"].group.pk).automatic_confirmation else MatchInvitation.NOT_CONFIRMED
+            send_match_invitation_task.delay(
+                player = player.pk,
+                match = kwargs["instance"].pk,
+                group = kwargs["instance"].group.pk
             )
 
 class Match(models.Model):
