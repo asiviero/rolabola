@@ -57,9 +57,18 @@
     $(".confirm-container .btn").click(function() {
       var url = $(this).data("url")
       ajaxGet(url, function(content){
-        
+
       })
     })
+
+    $(".automatic-confirmation-wrapper label").click(function() {
+      var url = $(this).siblings("input").addBack().data("url")
+      console.log(url)
+      ajaxGet(url, function(content){
+
+      })
+    })
+
   })
 
 

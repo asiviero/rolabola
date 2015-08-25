@@ -561,6 +561,7 @@ class GroupTest(StaticLiveServerTestCase):
         requests_block = self.browser.find_elements_by_class_name("membership-requests")
         self.assertEqual(len(requests_block),0)
 
+@override_settings(CELERY_ALWAYS_EAGER=True)
 class MatchTest(StaticLiveServerTestCase):
 
     def setUp(self):
@@ -847,7 +848,7 @@ class MatchTest(StaticLiveServerTestCase):
         # Perform the calendar tests
 
 
-
+@override_settings(CELERY_ALWAYS_EAGER=True)
 class CalendarTest(StaticLiveServerTestCase):
 
     def setUp(self):
@@ -1072,6 +1073,7 @@ class CalendarTest(StaticLiveServerTestCase):
         self.assertIn(str(sunday_before_first_day_of_month.day),calendar_row_list[0].find_elements_by_tag_name("td")[0].text)
         self.assertIn(str(next_saturday_after_last_date_of_month.day),calendar_row_list[-1].find_elements_by_tag_name("td")[-1].text)
 
+@override_settings(CELERY_ALWAYS_EAGER=True)
 class MatchConfirmationTest(StaticLiveServerTestCase):
 
     def setUp(self):
@@ -1340,3 +1342,101 @@ class MatchConfirmationTest(StaticLiveServerTestCase):
         buttons = wednesday_match_invitation.find_element_by_class_name("confirm-container").find_elements_by_css_selector("a.disabled")
         self.assertEqual(len(buttons),1)
         self.assertIn("NOT GOING",buttons[0].text)
+
+    def test_user_can_set_automatic_confirmation_in_group(self):
+        self.browser.get(self.live_server_url)
+
+        form_login = self.browser.find_element_by_id('form_login')
+        form_login.find_element_by_id("id_username").send_keys(self.user_2.user.username)
+        form_login.find_element_by_id("id_password").send_keys("123456")
+        form_login.find_element_by_css_selector("input[type='submit']").click()
+
+        self.browser.get("%s/group/%d/" % (self.live_server_url,self.group_public.id))
+        time.sleep(2)
+        self.browser.find_element_by_class_name("automatic-confirmation-wrapper").find_element_by_tag_name("label").click()
+        time.sleep(2)
+        self.browser.get("%s/group/%d/" % (self.live_server_url,self.group_public.id))
+        time.sleep(1)
+
+        checkbox = self.browser.find_element_by_class_name("automatic-confirmation-wrapper").find_element_by_tag_name("input")
+        self.assertEqual(checkbox.is_selected(),True)
+
+        self.browser.get(self.live_server_url)
+        self.browser.find_element_by_link_text("Logout").click()
+
+        form_login = self.browser.find_element_by_id('form_login')
+        form_login.find_element_by_id("id_username").send_keys(self.user_1.user.username)
+        form_login.find_element_by_id("id_password").send_keys("123456")
+        form_login.find_element_by_css_selector("input[type='submit']").click()
+
+        self.browser.get("%s/group/%d/" % (self.live_server_url,self.group_public.id))
+        self.browser.find_element_by_link_text("New Match").click()
+
+        # User fills the form with data on date, price, max and min people
+        form_match = self.browser.find_element_by_id("form-group-match-creation")
+        form_match.find_element_by_id("id_date").send_keys(datetime.date.today().strftime("%d/%m/%Y"))
+        form_match.find_element_by_id("id_price").send_keys("10")
+        form_match.find_element_by_id("id_min_participants").send_keys("10")
+        form_match.find_element_by_id("id_max_participants").send_keys("15")
+
+        form_match.find_element_by_css_selector("input[type='submit']").click()
+
+        confirmed_list = self.browser.find_element_by_class_name("confirmed-list")
+        self.assertIn(str(self.user_2),confirmed_list.text)
+
+    def test_admin_can_confirm_presence_of_any_user(self):
+        self.browser.get(self.live_server_url)
+
+        form_login = self.browser.find_element_by_id('form_login')
+        form_login.find_element_by_id("id_username").send_keys(self.user_1.user.username)
+        form_login.find_element_by_id("id_password").send_keys("123456")
+        form_login.find_element_by_css_selector("input[type='submit']").click()
+
+        self.browser.get("%s/group/%d/" % (self.live_server_url,self.group_public.id))
+        self.browser.find_element_by_link_text("New Match").click()
+
+        # User fills the form with data on date, price, max and min people
+        form_match = self.browser.find_element_by_id("form-group-match-creation")
+        form_match.find_element_by_id("id_date").send_keys(datetime.date.today().strftime("%d/%m/%Y"))
+        form_match.find_element_by_id("id_price").send_keys("10")
+        form_match.find_element_by_id("id_min_participants").send_keys("10")
+        form_match.find_element_by_id("id_max_participants").send_keys("15")
+
+        form_match.find_element_by_css_selector("input[type='submit']").click()
+        not_confirmed_list = self.browser.find_element_by_class_name("not-confirmed-list").find_elements_by_tag_name("li")
+        for row in not_confirmed_list:
+            if str(self.user_2) in row.text:
+                links = row.find_elements_by_tag_name("a")
+                self.assertEqual(len(links),2)
+
+                # Check if buttons are with the right labels
+                self.assertEqual(links[0].find_element_by_tag_name("i").text,"done")
+                self.assertEqual(links[1].find_element_by_tag_name("i").text,"clear")
+
+                links[0].click()
+        time.sleep(1)
+        confirmed_list = self.browser.find_elements_by_css_selector("li:not(.header)")
+        self.assertNotIn(str(self.user_1),"".join([x.text for x in confirmed_list]))
+        self.assertIn(str(self.user_2),"".join([x.text for x in confirmed_list]))
+        for row in confirmed_list:
+            if str(self.user_2) in row.text:
+                links = row.find_elements_by_tag_name("a")
+                self.assertEqual(len(links),0)
+        not_confirmed_list = self.browser.find_element_by_class_name("not-confirmed-list").find_elements_by_tag_name("li")
+        header = self.browser.find_element_by_css_selector("li.header")
+        self.assertIn(str(self.user_1),header.text)
+        self.assertNotIn(str(self.user_2),"".join([x.text for x in not_confirmed_list]))
+
+        # Refresh the page to see if nothing changed
+        self.browser.refresh()
+        confirmed_list = self.browser.find_elements_by_css_selector("li:not(.header)")
+        self.assertNotIn(str(self.user_1),"".join([x.text for x in confirmed_list]))
+        self.assertIn(str(self.user_2),"".join([x.text for x in confirmed_list]))
+        for row in confirmed_list:
+            if str(self.user_2) in row.text:
+                links = row.find_elements_by_tag_name("a")
+                self.assertEqual(len(links),0)
+        not_confirmed_list = self.browser.find_element_by_class_name("not-confirmed-list").find_elements_by_tag_name("li")
+        header = self.browser.find_element_by_css_selector("li.header")
+        self.assertIn(str(self.user_1),header.text)
+        self.assertNotIn(str(self.user_2),"".join([x.text for x in not_confirmed_list]))

@@ -21,7 +21,18 @@
 <div class="not-confirmed-list">
   <ul>
     {% for not_confirmed_player in unaswered %}
-      <li>{{ not_confirmed_player }}</li>
+      <li>{{ not_confirmed_player }}
+        {% if user_is_admin %}
+        <div class="confirm-container">
+          <a class="btn btn-floating btn-tiny green btn-accept-invitation" data-url="{% url "group-match-accept" group.pk match.pk %}?u={{ not_confirmed_player.pk }}">
+            <i class="material-icons">done</i>
+          </a>
+          <a class="btn btn-floating btn-tiny red btn-refuse-invitation" data-url="{% url "group-match-reject" group.pk match.pk %}">
+            <i class="material-icons">clear</i>
+          </a>
+        </div>
+        {% endif %}
+      </li>
     {% endfor %}
     {% for refused_player in match.get_refused_list %}
       <li class="disabled">{{ refused_player }}</li>

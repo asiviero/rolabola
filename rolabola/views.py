@@ -108,6 +108,17 @@ def calendar_update_monthly(request):
         }
     }
 
+@group_membership_required
+@login_required
+@ajax
+def toggle_automatic_confirmation(request,group):
+    group = get_object_or_404(Group,pk=group)
+    automatic_confirmation = request.user.player.toggle_automatic_confirmation_in_group(group=group)
+    response = {
+        "automatic_confirmation" :  automatic_confirmation
+    }
+    return response
+
 def login_and_register(request):
 
     if request.method == 'POST':
@@ -177,7 +188,10 @@ def group(request,group):
     user_in_group = group.member_list.filter(pk=request.user.player.id).count() != 0
     user_requested_membership = group.member_pending_list.filter(pk=request.user.player.id).count() != 0
     is_admin = request.user.player in group.member_list.filter(membership__role=Membership.GROUP_ADMIN)
-
+    try:
+        automatic_confirmation = Membership.objects.get(member__pk=request.user.player.id,group__pk=group.pk).automatic_confirmation
+    except:
+        automatic_confirmation = False
     #days = [datetime.date(2001, 1, i).strftime('%a') for i in range(1,8)]
 
 
@@ -204,7 +218,6 @@ def group(request,group):
 
     calendar_template = loader.get_template("calendar/monthly_calendar.html")
 
-    print(group.pk)
     calendar_view = calendar_template.render({"days_label":days,"weeks":weeks,"today":today})
 
     return render(request, "group.html", {
@@ -214,6 +227,7 @@ def group(request,group):
         "request_list":group.member_pending_list.all(),
         "is_admin":is_admin,
         "calendar_view":calendar_view,
+        "automatic_confirmation":automatic_confirmation
     })
 
 @login_required
@@ -320,6 +334,7 @@ def group_match(request,group,match):
     context = {
         "group":group,
         "match": match,
+        "user_is_admin":request.user.player in group.member_list.filter(membership__role=Membership.GROUP_ADMIN),
     }
 
     if request.user.player in match.get_unanswered_list():
@@ -339,7 +354,17 @@ def group_match(request,group,match):
 def group_match_accept(request,group,match):
     group=get_object_or_404(Group,pk=group)
     match=get_object_or_404(Match,pk=match)
-    request.user.player.accept_match_invitation(match=match)
+
+    if request.GET.get("u") is not None:
+        if request.user.player in group.member_list.filter(membership__role=Membership.GROUP_ADMIN):
+            player = get_object_or_404(Player,pk=request.GET.get("u"))
+        else:
+            return {}
+    else:
+        player = request.user.player
+
+    print(player.pk)
+    player.accept_match_invitation(match=match)
     match_invitation_template = loader.get_template("match_invitation_calendar.html")
 
     match_confirmed_list_template = loader.get_template("match/match_confirmed_list.html")
@@ -368,7 +393,16 @@ def group_match_accept(request,group,match):
 def group_match_reject(request,group,match):
     group=get_object_or_404(Group,pk=group)
     match=get_object_or_404(Match,pk=match)
-    request.user.player.refuse_match_invitation(match=match)
+
+    if request.GET.get("u") is not None:
+        if request.user.player in group.member_list.filter(membership__role=Membership.GROUP_ADMIN):
+            player = get_object_or_404(Player,pk=request.GET.get("u"))
+        else:
+            return {}
+    else:
+        player = request.user.player
+
+    player.refuse_match_invitation(match=match)
     match_invitation_template = loader.get_template("match_invitation_calendar.html")
 
     match_confirmed_list_template = loader.get_template("match/match_confirmed_list.html")
@@ -390,5 +424,5 @@ def group_match_reject(request,group,match):
             ".confirmed-list-wrapper" : match_confirmed_list_template.render(context)
         }
     }
-    
+
     return response

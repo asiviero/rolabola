@@ -12,6 +12,12 @@
       membership requested
     </a>
   {% endif %}
+  {% if user_in_group %}
+    <div class="automatic-confirmation-wrapper">
+      <input {% if automatic_confirmation %}checked{% endif %} type="checkbox" id="checkbox-automatic-confirmation" name="automatic_confirmation" data-url="{% url 'toggle-automatic-confirmation' group.pk %}"/>
+      <label for="checkbox-automatic-confirmation">Automatic Match Confirmation</label>
+    </div>
+  {% endif %}
   {% if is_admin %}
     <a href="{% url 'group-match-create' group.id %}">New Match</a>
   {% endif %}
