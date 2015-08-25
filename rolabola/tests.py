@@ -309,6 +309,44 @@ class GroupTest(TestCase):
         membership_requests = user_3.get_membership_requests_for_managed_groups()
         self.assertEqual(len(membership_requests),1)
 
+    @override_settings(CELERY_ALWAYS_EAGER=True)
+    def test_user_gets_invitations_to_matches_scheduled_before_he_joined_a_group(self):
+        user_1 = PlayerFactory()
+        user_2 = PlayerFactory()
+        user_3 = PlayerFactory()
+        user_4 = PlayerFactory()
+
+        group_1 = user_1.create_group("Group 1", public=True)
+
+        user_2.join_group(group_1)
+        user_3.join_group(group_1)
+
+        user_1.schedule_match(group_1,
+                                            date=timezone.make_aware(datetime.datetime.now() + datetime.timedelta(days=3)),
+                                            max_participants=15,
+                                            min_participants=10,
+                                            price=Decimal("20.0"))
+
+        # Checks if a match was created
+        self.assertEqual(Match.objects.all().count(),1)
+
+        # Checks if 3 match invitations were issued
+        self.assertEqual(MatchInvitation.objects.all().count(),3)
+
+        # Check if user 4 was not invited
+        self.assertEqual(MatchInvitation.objects.filter(player__pk=user_4.id).count(),0)
+
+        # User 4 joins the group
+        user_4.join_group(group_1)
+
+        # Checks if user 4 got an invitation
+        self.assertEqual(MatchInvitation.objects.all().count(),4)
+
+        # Check if user 4 was not invited
+        self.assertEqual(MatchInvitation.objects.filter(player__pk=user_4.id).count(),1)
+
+
+
 
 class RegistrationTest(TestCase):
 
@@ -376,6 +414,7 @@ class SearchTest(TestCase):
 
 class MatchTest(TestCase):
 
+    @override_settings(CELERY_ALWAYS_EAGER=True)
     def test_user_can_schedule_match(self):
         user_1 = PlayerFactory()
         user_2 = PlayerFactory()
@@ -402,6 +441,7 @@ class MatchTest(TestCase):
         # Check if user 4 was not invited
         self.assertEqual(MatchInvitation.objects.filter(player__pk=user_4.id).count(),0)
 
+    @override_settings(CELERY_ALWAYS_EAGER=True)
     def test_nonadmin_user_cant_schedule_match(self):
         user_1 = PlayerFactory()
         user_2 = PlayerFactory()
@@ -425,6 +465,7 @@ class MatchTest(TestCase):
         # Checks if no match invitations were issued
         self.assertEqual(MatchInvitation.objects.all().count(),0)
 
+    @override_settings(CELERY_ALWAYS_EAGER=True)
     def test_admin_user_can_schedule_match_only_for_his_own_groups(self):
         user_1 = PlayerFactory()
         user_2 = PlayerFactory()
@@ -477,6 +518,7 @@ class MatchTest(TestCase):
 
 class CalendarTest(TestCase):
 
+    @override_settings(CELERY_ALWAYS_EAGER=True)
     def test_list_of_match_invitations_for_user(self):
         user_1 = PlayerFactory()
         user_2 = PlayerFactory()
@@ -515,6 +557,7 @@ class CalendarTest(TestCase):
         match_invitation_list_user_4 = user_4.get_match_invitations()
         self.assertEqual(len(match_invitation_list_user_4),1)
 
+    @override_settings(CELERY_ALWAYS_EAGER=True)
     def test_user_should_not_see_invitations_to_groups_he_is_not_a_member(self):
         user_1 = PlayerFactory()
         user_2 = PlayerFactory()
@@ -573,6 +616,7 @@ class CalendarTest(TestCase):
                                                                                                     )
         self.assertEqual(len(match_invitation_list_user_1),4)
 
+    @override_settings(CELERY_ALWAYS_EAGER=True)    
     def test_filter_match_invitation_by_group(self):
         user_1 = PlayerFactory()
         user_2 = PlayerFactory()
@@ -613,6 +657,7 @@ class CalendarTest(TestCase):
 
         self.assertEqual(response.status_code,403)
 
+@override_settings(CELERY_ALWAYS_EAGER=True)
 class MatchConfirmationTest(TestCase):
 
     def setUp(self):
