@@ -30,5 +30,7 @@ urlpatterns = [
     url(r'^group/(\d+)/match/(\d+)/reject$', views.group_match_reject, name="group-match-reject"),
     url(r'^calendar/update-weekly/$', views.calendar_update_weekly, name="calendar-update-weekly"),
     url(r'^calendar/update-monthly/$', views.calendar_update_monthly, name="calendar-update-monthly"),
+    url(r'^venue/(\d+)/$', views.venue, name="venue"),
+    url(r'^venue/create$', views.venue_create, name="venue-create")
 
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT) + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

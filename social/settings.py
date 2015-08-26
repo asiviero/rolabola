@@ -46,6 +46,7 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'geoposition',
     'rolabola',
     'django_ajax'
 )
@@ -102,6 +103,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'django.core.context_processors.media',
+                'rolabola.context_processors.maps_api_key',
             ],
         },
     },
@@ -155,3 +157,7 @@ CELERY_ACCEPT_CONTENT = ['application/json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'America/Sao_Paulo'
+
+# Maps
+
+GOOGLE_MAPS_V3_APIKEY = "AIzaSyANMg7jLGPM9Jt-YpRVl_VgVqMDvX7kAA4"

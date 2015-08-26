@@ -1,4 +1,5 @@
 from django.db import models
+from geoposition.fields import GeopositionField
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
 from django.shortcuts import get_object_or_404
@@ -429,3 +430,11 @@ class MatchInvitation(models.Model):
     def revert_confirmation(self):
         self.status = self.NOT_CONFIRMED if self.status == self.CONFIRMED else self.CONFIRMED
         self.save()
+
+class Venue(models.Model):
+    quadra = models.CharField(max_length=255)
+    location = GeopositionField()
+class VenueForm(ModelForm):
+    class Meta:
+        model = Venue
+        fields = ["quadra","location"]

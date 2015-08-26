@@ -1,0 +1,11 @@
+{% extends "home.html" %}
+
+{% block main_content_block %}
+  <h2>Create Group</h2>
+  <form id="form-venue-creation" method="post"  enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ venue_form.media }}
+    {{ venue_form.as_p }}
+    <input type="submit" />
+  </form>
+{% endblock %}

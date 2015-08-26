@@ -19,6 +19,7 @@ import json
 from django.utils import timezone
 
 
+
 # Create your views here.
 @login_required
 def home(request):
@@ -426,3 +427,29 @@ def group_match_reject(request,group,match):
     }
 
     return response
+
+@login_required
+def venue(request,venue):
+    venue = get_object_or_404(Venue,pk=venue)
+    return render(request, "venue/venue.html", {
+        "venue":venue,
+    })
+    pass
+
+@login_required
+def venue_create(request):
+    if request.method == 'POST':
+        venue_create_form = VenueForm(request.POST)
+        if venue_create_form.is_valid():
+            for row in venue_create_form.fields.values():
+                print(row)
+            print(venue_create_form.cleaned_data)
+            venue = Venue.objects.create(
+                quadra=venue_create_form.cleaned_data["quadra"],
+                location=venue_create_form.cleaned_data["location"],
+            )
+            print(venue)
+            return redirect(reverse("venue", args=(venue.pk,)))
+    return render(request, "venue/venue_create.html", {
+        "venue_form":VenueForm,
+    })
