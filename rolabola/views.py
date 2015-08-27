@@ -441,14 +441,11 @@ def venue_create(request):
     if request.method == 'POST':
         venue_create_form = VenueForm(request.POST)
         if venue_create_form.is_valid():
-            for row in venue_create_form.fields.values():
-                print(row)
-            print(venue_create_form.cleaned_data)
             venue = Venue.objects.create(
                 quadra=venue_create_form.cleaned_data["quadra"],
+                address=venue_create_form.cleaned_data["address"],
                 location=venue_create_form.cleaned_data["location"],
             )
-            print(venue)
             return redirect(reverse("venue", args=(venue.pk,)))
     return render(request, "venue/venue_create.html", {
         "venue_form":VenueForm,

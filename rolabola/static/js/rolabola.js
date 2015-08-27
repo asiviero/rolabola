@@ -68,8 +68,15 @@
 
       })
     })
+    $(document).on("marker_dragged",function(e,data){
+      console.log(e)
+      console.log(data)
+      $("#id_address").val(data.address)
+      //console.log($(this).text());
+    });
 
   })
+
 
 
 

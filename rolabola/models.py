@@ -433,8 +433,10 @@ class MatchInvitation(models.Model):
 
 class Venue(models.Model):
     quadra = models.CharField(max_length=255)
+    address = models.TextField()
     location = GeopositionField()
 class VenueForm(ModelForm):
     class Meta:
         model = Venue
-        fields = ["quadra","location"]
+        fields = ["quadra","location","address"]
+        widgets = {"address" : forms.HiddenInput()}

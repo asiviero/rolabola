@@ -5,6 +5,7 @@
 {% endblock %}
 {% block main_content_block %}
   {{ venue.location }}
+  <div class="geoposition-widget" data-map-widget-height="{{ config.map_widget_height }}" data-map-options="{{ config.map_options }}" data-marker-options="{{ config.marker_options }}">
   <div id="map-canvas" style="height: 200px;"></div>
   <script>
             function initialize() {
@@ -28,4 +29,8 @@
             }
             google.maps.event.addDomListener(window, 'load', initialize);
         </script>
+</div>
+<div class="venue-address">
+  {{ venue.address }}
+</div>
 {% endblock %}
