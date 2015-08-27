@@ -95,7 +95,7 @@ if (jQuery != undefined) {
                     if (results && results[0]) {
                         $addressRow.text(results[0].formatted_address);
                         // Also trigger a custom event that needs to be captured
-                        jQuery.event.trigger("marker_dragged", {
+                        $container.trigger("marker_dragged", {
                           latitude : marker.position.lat(),
                           longitude : marker.position.lng(),
                           address : results[0].formatted_address
