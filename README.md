@@ -72,11 +72,11 @@ As you all know, automated tests are incredibly important. Currently, there are 
 
 Running the tests can be done in several ways:
 
-  $ python3 manage.py test # tests everything
-  $ python3 manage.py test functional_tests # functional_tests only
-  $ python3 manage.py test rolabola # unit and integration tests only
-  $ python3 manage.py rolabola.tests.GroupTest # unit and integrations tests inside GroupTest
-  $ python3 manage.py rolabola.tests.GroupTest.test_user_can_join_public_group # runs a specific test
+    $ python3 manage.py test # tests everything
+    $ python3 manage.py test functional_tests # functional_tests only
+    $ python3 manage.py test rolabola # unit and integration tests only
+    $ python3 manage.py rolabola.tests.GroupTest # unit and integrations tests  inside GroupTest
+    $ python3 manage.py rolabola.tests.GroupTest.test_user_can_join_public_group # runs a specific test
 
 If you're adding new features, please write tests for it so no one will break it futurely. If you're modifying existing features, make sure tests still pass **or** modify the tests to suit the new functionality.
 
