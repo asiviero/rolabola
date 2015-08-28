@@ -13,4 +13,4 @@ pip3 install django-allauth
 pip3 install djangoajax
 pip3 install celery
 pip3 install redis
-pip3 install django-geoposition
+pip3 install django-appconf
