@@ -87,6 +87,7 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'django_ajax.middleware.AJAXMiddleware'
 )
 
 ROOT_URLCONF = 'social.urls'

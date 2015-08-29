@@ -45,7 +45,7 @@ def home(request):
     })
 
 @login_required
-@ajax
+
 def calendar_update_weekly(request):
     base_date = timezone.make_aware(datetime.datetime(int(request.POST.get("year")),int(request.POST.get("month")),int(request.POST.get("day"))))
     base_date += dateutil.relativedelta.relativedelta(weekday=dateutil.relativedelta.SU(-1))
@@ -71,7 +71,7 @@ def calendar_update_weekly(request):
 
 @group_membership_required
 @login_required
-@ajax
+
 def calendar_update_monthly(request):
     group = get_object_or_404(Group, pk=request.POST.get("group"))
     base_date = timezone.make_aware(datetime.datetime(int(request.POST.get("year")),int(request.POST.get("month")),int(request.POST.get("day"))))
@@ -111,7 +111,7 @@ def calendar_update_monthly(request):
 
 @group_membership_required
 @login_required
-@ajax
+
 def toggle_automatic_confirmation(request,group):
     group = get_object_or_404(Group,pk=group)
     automatic_confirmation = request.user.player.toggle_automatic_confirmation_in_group(group=group)
@@ -232,7 +232,7 @@ def group(request,group):
     })
 
 @login_required
-@ajax
+
 def group_join(request,group):
     group = get_object_or_404(Group, pk=group)
     membership_or_request = request.user.player.join_group(group)
@@ -252,7 +252,7 @@ def group_join(request,group):
 
 @group_admin_required
 @login_required
-@ajax
+
 def group_make_private(request,group):
     group = get_object_or_404(Group, pk=group)
     group.public = not group.public
@@ -264,7 +264,7 @@ def group_make_private(request,group):
 
 @group_admin_required
 @login_required
-@ajax
+
 def group_accept_request(request,group,player):
     group = get_object_or_404(Group, pk=group)
     player = get_object_or_404(Player, pk=player)
@@ -280,7 +280,7 @@ def group_accept_request(request,group,player):
 
 @group_admin_required
 @login_required
-@ajax
+
 def group_reject_request(request,group,player):
     group = get_object_or_404(Group, pk=group)
     player = get_object_or_404(Player, pk=player)
@@ -351,7 +351,7 @@ def group_match(request,group,match):
     return render(request, "group_match.html", context)
 
 @login_required
-@ajax
+
 def group_match_accept(request,group,match):
     group=get_object_or_404(Group,pk=group)
     match=get_object_or_404(Match,pk=match)
@@ -390,7 +390,7 @@ def group_match_accept(request,group,match):
     return response
 
 @login_required
-@ajax
+
 def group_match_reject(request,group,match):
     group=get_object_or_404(Group,pk=group)
     match=get_object_or_404(Match,pk=match)
@@ -446,6 +446,9 @@ def venue_create(request):
                 address=venue_create_form.cleaned_data["address"],
                 location=venue_create_form.cleaned_data["location"],
             )
+            if(request.is_ajax()) :
+                response = {"id":venue.pk, "append-fragments" : {"#id_venue" : "<option value='%s'>%s</option>" % (venue.pk,venue.quadra)}}
+                return response
             return redirect(reverse("venue", args=(venue.pk,)))
     return render(request, "venue/venue_create.html", {
         "venue_form":VenueForm,

@@ -13,6 +13,8 @@ from django.utils import timezone
 from celery.decorators import task
 from celery.utils.log import get_task_logger
 from rolabola.models import *
+from rolabola.widgets import *
+from django.core.urlresolvers import reverse
 logger = get_task_logger(__name__)
 
 #import os
@@ -366,6 +368,19 @@ def match_post_save(sender, **kwargs):
                 group = kwargs["instance"].group.pk
             )
 
+class Venue(models.Model):
+    quadra = models.CharField(max_length=255)
+    address = models.TextField()
+    location = GeopositionField()
+    def __str__(self):
+        return self.quadra
+
+class VenueForm(ModelForm):
+    class Meta:
+        model = Venue
+        fields = ["quadra","location","address"]
+        widgets = {"address" : forms.HiddenInput()}
+
 class Match(models.Model):
     date = models.DateTimeField()
     max_participants = models.IntegerField(default=0)
@@ -373,6 +388,7 @@ class Match(models.Model):
     price = models.DecimalField(max_digits=5,decimal_places=2)
     group = models.ForeignKey(Group)
     player_list = models.ManyToManyField(Player,through='MatchInvitation')
+    venue = models.ForeignKey(Venue, null=True, blank=True)
 
     def get_confirmed_list(self):
         return self.player_list.filter(matchinvitation__status=MatchInvitation.CONFIRMED)
@@ -392,7 +408,10 @@ post_save.connect(match_post_save, sender=Match)
 class MatchForm(ModelForm):
     class Meta:
         model = Match
-        fields = ["date","max_participants","min_participants","price"]
+        fields = ["date","max_participants","min_participants","price", "venue"]
+        widgets = {
+            "venue" : SelectOrCreate(form=VenueForm,url="venue-create")
+        }
     until_end_of_month = forms.BooleanField(label="Schedule until the end of the month",required=False)
     until_end_of_year = forms.BooleanField(label="Schedule until the end of the year",required=False)
     def clean(self):
@@ -430,13 +449,3 @@ class MatchInvitation(models.Model):
     def revert_confirmation(self):
         self.status = self.NOT_CONFIRMED if self.status == self.CONFIRMED else self.CONFIRMED
         self.save()
-
-class Venue(models.Model):
-    quadra = models.CharField(max_length=255)
-    address = models.TextField()
-    location = GeopositionField()
-class VenueForm(ModelForm):
-    class Meta:
-        model = Venue
-        fields = ["quadra","location","address"]
-        widgets = {"address" : forms.HiddenInput()}

@@ -75,6 +75,61 @@
       //console.log($(this).text());
     });
 
+    $('.modal-trigger').leanModal();
+
+    $("#id_venue-dialog a.modal-submit").click(function() {
+      var url = $(this).data("url")
+      var container = $(this).closest("#id_venue-dialog")
+      var data = {
+        "address" : $(container).find("#id_address").val(),
+        "quadra" : $(container).find("#id_quadra").val(),
+        "location_0" : $(container).find("#id_location_0").val(),
+        "location_1" : $(container).find("#id_location_1").val()
+      }
+      ajaxPost($(this).data("url"), data, function(content) {
+        container.closeModal()
+        $("#id_venue").val(content.id).change();
+        $("#id_venue").trigger('contentChanged');
+        $("#id_venue").material_select();
+      })
+
+    });
+    /*$('a[name=add_dialog]').click(function() {
+    var dialog, id;
+    id = $(this).data('id');
+    dialog = $('#' + id + '-dialog').dialog();
+    return false;
+  });
+  return $('input[name=add_another_id_series]').click(function() {
+    var data, form;
+    form = $(this).parent().parent().find('#form-dialog');
+    data = {
+      param1: $('#param1').val(),
+      param2: $('#param2').val(),
+      param3: $('#param3').val(),
+      param4: $('#param4').val(),
+      param5: $('#param5').val()
+    };
+    return $.ajax($(this).data('url'), {
+      type: 'POST',
+      beforeSend: function(request) {
+        request.setRequestHeader('Cache-Control', 'no-cache');
+        request.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+        return request.setRequestHeader('X-CSRFToken', getCookie('csrftoken'));
+      },
+      data: data,
+      success: function(data) {
+        if (data.status === 'Wrong') {
+          $(form).html(data.form);
+        }
+        if (data.status === 'Ok') {
+          $('#id_series').append('<option value="' + data.id + '">' + data.name + '</option>');
+          $('#id_series').val(data.id);
+          $('#id_series-dialog').dialog('close');
+        }
+      }
+    });
+  });*/
   })
 
 

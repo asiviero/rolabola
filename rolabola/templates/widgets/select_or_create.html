@@ -1,0 +1,11 @@
+<a class="waves-effect waves-light btn btn-small modal-trigger" href="#{{ id }}-dialog">Add</a>
+<div id="{{ id }}-dialog" class="modal" title="Add Another">
+    <div class="modal-content">
+      {% csrf_token %}
+      <div id="form-dialog">
+        {{ form.media }}
+        {{ form.as_p }}
+      </div>
+      <p><a class="modal-submit waves-effect waves-light btn btn-small" data-url="{% url redirect_url %}">Add</a></p>
+    </div>
+</div>
