@@ -233,7 +233,7 @@ def group(request,group):
     })
 
 @login_required
-
+@ajax
 def group_join(request,group):
     group = get_object_or_404(Group, pk=group)
     membership_or_request = request.user.player.join_group(group)
@@ -265,7 +265,7 @@ def group_make_private(request,group):
 
 @group_admin_required
 @login_required
-
+@ajax
 def group_accept_request(request,group,player):
     group = get_object_or_404(Group, pk=group)
     player = get_object_or_404(Player, pk=player)
@@ -281,7 +281,7 @@ def group_accept_request(request,group,player):
 
 @group_admin_required
 @login_required
-
+@ajax
 def group_reject_request(request,group,player):
     group = get_object_or_404(Group, pk=group)
     player = get_object_or_404(Player, pk=player)
@@ -352,7 +352,7 @@ def group_match(request,group,match):
     return render(request, "group_match.html", context)
 
 @login_required
-
+@ajax
 def group_match_accept(request,group,match):
     group=get_object_or_404(Group,pk=group)
     match=get_object_or_404(Match,pk=match)
@@ -391,7 +391,7 @@ def group_match_accept(request,group,match):
     return response
 
 @login_required
-
+@ajax
 def group_match_reject(request,group,match):
     group=get_object_or_404(Group,pk=group)
     match=get_object_or_404(Match,pk=match)

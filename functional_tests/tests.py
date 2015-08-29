@@ -8,6 +8,7 @@ from django.test import Client
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from decimal import Decimal
 from rolabola.factories import *
+from rolabola.models import *
 import datetime
 import dateutil
 import dateutil.relativedelta
@@ -217,7 +218,7 @@ class SearchTest(StaticLiveServerTestCase):
 
         # User gets redirected to registration page, where he sees
         # the results of his search
-        time.sleep(1)
+        time.sleep(5)
         redirected_url = self.browser.current_url
 
         self.assertRegexpMatches(redirected_url, "search/*")
@@ -703,16 +704,6 @@ class MatchTest(StaticLiveServerTestCase):
         self.assertEqual(links[0].find_element_by_tag_name("i").text,"done")
         self.assertEqual(links[1].find_element_by_tag_name("i").text,"clear")
 
-        # User clicks "yes" button
-
-        # Wait some time for page to update
-
-        # Sees that buttons are gone
-
-        # Clicks on match page
-
-        # Sees his name on the "confirmed" list
-
     def test_manager_can_schedule_match_from_home_page(self):
         # User 1 logs in
         self.browser.get(self.live_server_url)
@@ -989,7 +980,14 @@ class CalendarTest(StaticLiveServerTestCase):
 
         self.assertEqual(len(calendar_row_list),((next_saturday_after_last_date_of_month-sunday_before_first_day_of_month).days+1)/7)
         match_invitations = self.browser.find_element_by_id("calendar-monthly-view").find_elements_by_class_name("match-invitation")
-        self.assertEqual(len(match_invitations),2)
+
+
+        self.assertEqual(len(match_invitations),MatchInvitation.objects.filter(
+            match__group__pk=self.group_public.pk,
+            player__pk=self.user_1.pk,
+            match__date__gte=sunday_before_first_day_of_month,
+            match__date__lte=next_saturday_after_last_date_of_month
+        ).count())
 
     def test_calendar_navigation_monthly_on_group_page(self):
         self.browser.get(self.live_server_url)
