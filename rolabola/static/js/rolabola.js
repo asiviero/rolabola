@@ -87,6 +87,7 @@
         "location_1" : $(container).find("#id_location_1").val()
       }
       ajaxPost($(this).data("url"), data, function(content) {
+        container.find(":input").val("")
         container.closeModal()
         $("#id_venue").val(content.id).change();
         $("#id_venue").trigger('contentChanged');

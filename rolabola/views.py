@@ -10,6 +10,7 @@ from rolabola.models import *
 from rolabola.forms import SearchForm
 from rolabola.decorators import *
 from django_ajax.decorators import ajax
+from django_ajax.shortcuts import render_to_json
 from django.db.models import Q
 from django.http import HttpResponse, JsonResponse, HttpResponseForbidden
 import urllib
@@ -45,7 +46,7 @@ def home(request):
     })
 
 @login_required
-
+@ajax
 def calendar_update_weekly(request):
     base_date = timezone.make_aware(datetime.datetime(int(request.POST.get("year")),int(request.POST.get("month")),int(request.POST.get("day"))))
     base_date += dateutil.relativedelta.relativedelta(weekday=dateutil.relativedelta.SU(-1))
@@ -71,7 +72,7 @@ def calendar_update_weekly(request):
 
 @group_membership_required
 @login_required
-
+@ajax
 def calendar_update_monthly(request):
     group = get_object_or_404(Group, pk=request.POST.get("group"))
     base_date = timezone.make_aware(datetime.datetime(int(request.POST.get("year")),int(request.POST.get("month")),int(request.POST.get("day"))))
@@ -111,7 +112,7 @@ def calendar_update_monthly(request):
 
 @group_membership_required
 @login_required
-
+@ajax
 def toggle_automatic_confirmation(request,group):
     group = get_object_or_404(Group,pk=group)
     automatic_confirmation = request.user.player.toggle_automatic_confirmation_in_group(group=group)
@@ -252,7 +253,7 @@ def group_join(request,group):
 
 @group_admin_required
 @login_required
-
+@ajax
 def group_make_private(request,group):
     group = get_object_or_404(Group, pk=group)
     group.public = not group.public
@@ -448,7 +449,7 @@ def venue_create(request):
             )
             if(request.is_ajax()) :
                 response = {"id":venue.pk, "append-fragments" : {"#id_venue" : "<option value='%s'>%s</option>" % (venue.pk,venue.quadra)}}
-                return response
+                return render_to_json(response)
             return redirect(reverse("venue", args=(venue.pk,)))
     return render(request, "venue/venue_create.html", {
         "venue_form":VenueForm,
