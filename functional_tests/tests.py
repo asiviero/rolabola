@@ -986,8 +986,8 @@ class CalendarTest(StaticLiveServerTestCase):
         self.assertEqual(len(match_invitations),MatchInvitation.objects.filter(
             match__group__pk=self.group_public.pk,
             player__pk=self.user_1.pk,
-            match__date__gte=timezone.make_aware(sunday_before_first_day_of_month),
-            match__date__lte=timezone.make_aware(next_saturday_after_last_date_of_month)
+            match__date__gte=sunday_before_first_day_of_month,
+            match__date__lte=next_saturday_after_last_date_of_month
         ).count())
 
     def test_calendar_navigation_monthly_on_group_page(self):
