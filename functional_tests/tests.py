@@ -316,7 +316,7 @@ class GroupTest(StaticLiveServerTestCase):
         add_group_button.click()
 
         # User clicks in create new group
-        time.sleep(1)
+        time.sleep(5)
         self.assertEqual(self.browser.current_url,"%s/group/create" % self.live_server_url)
 
         form_group_creation = self.browser.find_element_by_id("form-group-creation")
@@ -326,7 +326,7 @@ class GroupTest(StaticLiveServerTestCase):
         #form_group_creation.find_element_by_id("id_name").send_keys(keys.ENTER)
 
         form_group_creation.find_element_by_css_selector("input[type='submit']").click()
-        time.sleep(1)
+        time.sleep(5)
 
         # Gets redirected
         redirected_url = self.browser.current_url
@@ -375,7 +375,7 @@ class GroupTest(StaticLiveServerTestCase):
         button = side_pane.find_element_by_css_selector("a.btn-join-group")
         self.assertIn("JOIN",button.text)
         button.click()
-        time.sleep(1)
+        time.sleep(5)
         buttons = side_pane.find_elements_by_css_selector("a.btn-join-group")
         self.assertEqual(len(buttons),0)
 
@@ -387,7 +387,7 @@ class GroupTest(StaticLiveServerTestCase):
         button = side_pane.find_element_by_css_selector("a.btn-join-group")
         self.assertIn("JOIN",button.text)
         button.click()
-        time.sleep(1)
+        time.sleep(5)
 
         button = side_pane.find_element_by_css_selector("a.btn-join-group.disabled")
         self.assertIn("MEMBERSHIP REQUESTED",button.text)
@@ -430,7 +430,7 @@ class GroupTest(StaticLiveServerTestCase):
 
 
         # Reload group object
-        time.sleep(1)
+        time.sleep(5)
         group = Group.objects.get(pk=self.group_public.pk)
         self.assertEqual(group.public,False)
 
@@ -453,7 +453,7 @@ class GroupTest(StaticLiveServerTestCase):
 
         label = side_pane.find_element_by_class_name("public-wrapper").find_element_by_tag_name("label")
         label.click()
-        time.sleep(1)
+        time.sleep(5)
 
         # Reload group object
         group = Group.objects.get(pk=self.group_public.pk)
@@ -472,13 +472,13 @@ class GroupTest(StaticLiveServerTestCase):
         self.assertEqual(len(membership_requests),3)
 
         # Accept the first (user_1), reject the second (user_3)
-        time.sleep(1)
+        time.sleep(5)
         # self.assertEqual(membership_requests[0].find_element_by_class_name("player-name").text,self.user_1.get_name())
         if(str(self.user_1) == membership_requests[0].find_element_by_class_name("player-name").text):
             membership_requests[0].find_element_by_css_selector("a.btn-accept-group i.material-icons").click()
         else :
             membership_requests[0].find_element_by_css_selector("a.btn-reject-group i.material-icons").click()
-        time.sleep(3)
+        time.sleep(5)
 
         requests_block = self.browser.find_element_by_class_name("membership-requests")
         membership_requests = requests_block.find_elements_by_tag_name("li")
@@ -487,7 +487,7 @@ class GroupTest(StaticLiveServerTestCase):
             membership_requests[0].find_element_by_css_selector("a.btn-accept-group i.material-icons").click()
         else :
             membership_requests[0].find_element_by_css_selector("a.btn-reject-group i.material-icons").click()
-        time.sleep(3)
+        time.sleep(5)
 
         requests_block = self.browser.find_element_by_class_name("membership-requests")
         membership_requests = requests_block.find_elements_by_tag_name("li")
@@ -497,7 +497,7 @@ class GroupTest(StaticLiveServerTestCase):
             membership_requests[0].find_element_by_css_selector("a.btn-accept-group i.material-icons").click()
         else :
             membership_requests[0].find_element_by_css_selector("a.btn-reject-group i.material-icons").click()
-        time.sleep(3)
+        time.sleep(5)
         membership_requests = requests_block.find_elements_by_tag_name("li")
         self.assertEqual(len(membership_requests),0)
 
@@ -525,7 +525,7 @@ class GroupTest(StaticLiveServerTestCase):
         else :
             membership_requests[0].find_element_by_css_selector("a.btn-reject-group i.material-icons").click()
 
-        time.sleep(3)
+        time.sleep(5)
         self.assertIn(self.user_1.user.first_name,self.browser.find_element_by_id("member-list").text)
 
         requests_block = self.browser.find_element_by_class_name("membership-requests")
@@ -538,7 +538,7 @@ class GroupTest(StaticLiveServerTestCase):
             membership_requests[0].find_element_by_css_selector("a.btn-accept-group i.material-icons").click()
         else :
             membership_requests[0].find_element_by_css_selector("a.btn-reject-group i.material-icons").click()
-        time.sleep(3)
+        time.sleep(5)
 
         requests_block = self.browser.find_element_by_class_name("membership-requests")
         membership_requests = requests_block.find_elements_by_tag_name("li")
@@ -844,7 +844,7 @@ class CalendarTest(StaticLiveServerTestCase):
 
     def setUp(self):
         self.browser = webdriver.Firefox()
-        self.browser.implicitly_wait(1.5)
+        self.browser.implicitly_wait(2.5)
 
         # Create a user
         self.user_1 = PlayerFactory()
@@ -986,8 +986,8 @@ class CalendarTest(StaticLiveServerTestCase):
         self.assertEqual(len(match_invitations),MatchInvitation.objects.filter(
             match__group__pk=self.group_public.pk,
             player__pk=self.user_1.pk,
-            match__date__gte=sunday_before_first_day_of_month,
-            match__date__lte=next_saturday_after_last_date_of_month
+            match__date__gte=timezone.make_aware(sunday_before_first_day_of_month),
+            match__date__lte=timezone.make_aware(next_saturday_after_last_date_of_month)
         ).count())
 
     def test_calendar_navigation_monthly_on_group_page(self):
