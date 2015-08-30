@@ -265,7 +265,7 @@ class GroupTest(StaticLiveServerTestCase):
 
     def setUp(self):
         self.browser = webdriver.Firefox()
-        self.browser.implicitly_wait(1.5)
+        self.browser.implicitly_wait(2.5)
 
         # Create a user
         self.user_1 = PlayerFactory()
@@ -353,7 +353,7 @@ class GroupTest(StaticLiveServerTestCase):
         button = side_pane.find_element_by_css_selector("a.btn-join-group")
         self.assertIn("JOIN",button.text)
         button.click()
-        time.sleep(2)
+        time.sleep(5)
         # User now sees his name on the member list
         self.assertIn(self.user_2.user.first_name,self.browser.find_element_by_id("member-list").text)
 
