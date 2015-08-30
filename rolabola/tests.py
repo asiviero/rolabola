@@ -616,7 +616,7 @@ class CalendarTest(TestCase):
                                                                                                     )
         self.assertEqual(len(match_invitation_list_user_1),4)
 
-    @override_settings(CELERY_ALWAYS_EAGER=True)    
+    @override_settings(CELERY_ALWAYS_EAGER=True)
     def test_filter_match_invitation_by_group(self):
         user_1 = PlayerFactory()
         user_2 = PlayerFactory()

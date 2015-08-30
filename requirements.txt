@@ -1,0 +1,12 @@
+django==1.8
+selenium
+factory_boy
+fake-factory
+Pillow
+django-material
+python-dateutil
+django-allauth
+djangoajax
+celery
+redis
+django-appconf
