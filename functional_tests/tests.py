@@ -19,7 +19,7 @@ class NewVisitorTest(StaticLiveServerTestCase):
     user_1 = None
     def setUp(self):
         self.browser = webdriver.Firefox()
-        self.browser.implicitly_wait(0.5)
+        self.browser.implicitly_wait(1.5)
 
         # Create a user
         self.user_1 = PlayerFactory()
@@ -119,7 +119,7 @@ class SearchTest(StaticLiveServerTestCase):
 
     def setUp(self):
         self.browser = webdriver.Firefox()
-        self.browser.implicitly_wait(0.5)
+        self.browser.implicitly_wait(1.5)
 
         # Create a user
         self.user_1 = PlayerFactory()
@@ -265,7 +265,7 @@ class GroupTest(StaticLiveServerTestCase):
 
     def setUp(self):
         self.browser = webdriver.Firefox()
-        self.browser.implicitly_wait(0.5)
+        self.browser.implicitly_wait(1.5)
 
         # Create a user
         self.user_1 = PlayerFactory()
@@ -567,7 +567,7 @@ class MatchTest(StaticLiveServerTestCase):
 
     def setUp(self):
         self.browser = webdriver.Firefox()
-        self.browser.implicitly_wait(0.5)
+        self.browser.implicitly_wait(1.5)
 
         # Create a user
         self.user_1 = PlayerFactory()
@@ -844,7 +844,7 @@ class CalendarTest(StaticLiveServerTestCase):
 
     def setUp(self):
         self.browser = webdriver.Firefox()
-        self.browser.implicitly_wait(0.5)
+        self.browser.implicitly_wait(1.5)
 
         # Create a user
         self.user_1 = PlayerFactory()
@@ -919,6 +919,7 @@ class CalendarTest(StaticLiveServerTestCase):
         new_last_sunday = str((last_sunday_date+datetime.timedelta(days=7)).day)
         new_next_saturday = str((last_sunday_date+datetime.timedelta(days=7)+datetime.timedelta(days=6)).day)
         calendar_view_rows = self.browser.find_element_by_id("schedule-box").find_elements_by_tag_name("tr")
+
         self.assertIn(new_last_sunday,calendar_view_rows[0].find_elements_by_tag_name("th")[0].text)
         self.assertIn(new_next_saturday,calendar_view_rows[0].find_elements_by_tag_name("th")[-1].text)
 
@@ -1076,7 +1077,7 @@ class MatchConfirmationTest(StaticLiveServerTestCase):
 
     def setUp(self):
         self.browser = webdriver.Firefox()
-        self.browser.implicitly_wait(0.5)
+        self.browser.implicitly_wait(1.5)
 
         # Create a user
         self.user_1 = PlayerFactory()
@@ -1356,7 +1357,7 @@ class MatchConfirmationTest(StaticLiveServerTestCase):
         time.sleep(2)
         self.browser.quit()
         self.browser = webdriver.Firefox()
-        self.browser.implicitly_wait(0.5)
+        self.browser.implicitly_wait(1.5)
         self.browser.get(self.live_server_url)
 
         form_login = self.browser.find_element_by_id('form_login')
@@ -1454,7 +1455,7 @@ class VenueTest(StaticLiveServerTestCase):
 
     def setUp(self):
         self.browser = webdriver.Firefox()
-        self.browser.implicitly_wait(0.5)
+        self.browser.implicitly_wait(1.5)
 
         # Create a user
         self.user_1 = PlayerFactory()
