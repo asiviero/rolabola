@@ -1475,6 +1475,7 @@ class VenueTest(StaticLiveServerTestCase):
         form_login.find_element_by_css_selector("input[type='submit']").click()
 
         self.browser.get("%s/venue/create" % (self.live_server_url,))
+        time.sleep(5)
         self.browser.find_element_by_id("id_quadra").send_keys("Quadra")
         self.browser.find_element_by_class_name("geoposition-search").find_element_by_tag_name("input").send_keys("Rua do Teste")
         time.sleep(5)
@@ -1482,7 +1483,7 @@ class VenueTest(StaticLiveServerTestCase):
         address = self.browser.find_element_by_class_name("geoposition-address").text
 
         self.browser.find_element_by_id("form-venue-creation").find_element_by_css_selector("input[type='submit']").click()
-        time.sleep(3)
+        time.sleep(5)
 
         redirected_url = self.browser.current_url
         self.assertRegexpMatches(redirected_url, "venue/\d+")
