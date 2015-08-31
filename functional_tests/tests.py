@@ -1456,12 +1456,14 @@ class VenueTest(StaticLiveServerTestCase):
 
     def setUp(self):
         self.browser = webdriver.Firefox()
-        self.browser.implicitly_wait(5)
+        self.browser.implicitly_wait(15)
 
         # Create a user
         self.user_1 = PlayerFactory()
         self.user_1.user.set_password("123456")
         self.user_1.user.save()
+
+        time.sleep(5)
 
     def tearDown(self):
         self.browser.quit()
