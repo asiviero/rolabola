@@ -1456,7 +1456,7 @@ class VenueTest(StaticLiveServerTestCase):
 
     def setUp(self):
         self.browser = webdriver.Firefox()
-        self.browser.implicitly_wait(1.5)
+        self.browser.implicitly_wait(5)
 
         # Create a user
         self.user_1 = PlayerFactory()
