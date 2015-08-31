@@ -1,6 +1,6 @@
 # Rolabola
 
-[![Build Status](https://travis-ci.org/asiviero/rolabola.svg?branch=develop)](https://travis-ci.org/asiviero/rolabola)
+[![Build Status](http://sites.xpd.com.br:8080/buildStatus/icon?job=RolaBola)](http://sites.xpd.com.br:8080/job/RolaBola/)
 
 Rolabola is a project to create a social network to make it easy for people to set up groups that regularly play sports together. This is very common in our home country (Brazil) and the whole process of scheduling the matches, calling up people, collecting everyone's money, keeping track of who's going, who actually played, how much everyone played and so on is incredibly laboursome, and usually a burden carried by a single person.
 
