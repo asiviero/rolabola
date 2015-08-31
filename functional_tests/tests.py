@@ -347,7 +347,7 @@ class GroupTest(StaticLiveServerTestCase):
 
         # User enters the desired group url
         self.browser.get("%s/group/%d/" % (self.live_server_url,self.group_public.id))
-
+        time.sleep(5)
         # User clicks the join button
         side_pane = self.browser.find_element_by_class_name('side-pane')
         button = side_pane.find_element_by_css_selector("a.btn-join-group")
@@ -445,7 +445,7 @@ class GroupTest(StaticLiveServerTestCase):
 
         # User goes to group url
         self.browser.get("%s/group/%d/" % (self.live_server_url,self.group_public.id))
-
+        time.sleep(5)
         # In the side pane, user sees a checkbox with regarding group status
         side_pane = self.browser.find_element_by_class_name('side-pane')
         checkbox = side_pane.find_element_by_class_name("public-wrapper").find_element_by_tag_name("input")
@@ -1235,6 +1235,7 @@ class MatchConfirmationTest(StaticLiveServerTestCase):
         form_login.find_element_by_css_selector("input[type='submit']").click()
 
         self.browser.get("%s/group/%d/match/%d" % (self.live_server_url,self.group_public.id,self.match_sunday.pk))
+        time.sleep(3)
         confirmed_list = self.browser.find_element_by_class_name("confirmed-list")
         not_confirmed_list = self.browser.find_element_by_class_name("not-confirmed-list")
         disabled_list = not_confirmed_list.find_elements_by_class_name("disabled")

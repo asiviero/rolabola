@@ -59,7 +59,7 @@ def calendar_update_weekly(request):
         "inner-fragments" : {}
     }
 
-    match_invitations_in_week = request.user.player.get_match_invitations(start_date=base_date,end_date=base_date+datetime.timedelta(days=7))
+    match_invitations_in_week = request.user.player.get_match_invitations(start_date=timezone.make_aware(base_date),end_date=timezone.make_aware(base_date+datetime.timedelta(days=7)))
     match_invitations = {k:[] for k in [x.day for x in dates]}
 
     match_invitation_template = loader.get_template("match_invitation_calendar.html")
@@ -87,8 +87,8 @@ def calendar_update_monthly(request):
 
     dates = [sunday_before_first_day_of_month + datetime.timedelta(days=x) for x in range(0, (next_saturday_after_last_date_of_month-sunday_before_first_day_of_month).days+1)]
     match_invitations_in_month = request.user.player.get_match_invitations(group=group,
-                                                                                                                     start_date=sunday_before_first_day_of_month,
-                                                                                                                     end_date=next_saturday_after_last_date_of_month)
+                                                                                                                     start_date=timezone.make_aware(sunday_before_first_day_of_month),
+                                                                                                                     end_date=timezone.make_aware(next_saturday_after_last_date_of_month))
     match_templates = {k:[] for k in [x for x in dates]}
 
     match_invitation_template = loader.get_template("match_invitation_calendar.html")
@@ -208,8 +208,8 @@ def group(request,group):
 
     dates = [sunday_before_first_day_of_month + datetime.timedelta(days=x) for x in range(0, (next_saturday_after_last_date_of_month-sunday_before_first_day_of_month).days+1)]
     match_invitations_in_month = request.user.player.get_match_invitations(group=group,
-                                                                                                                     start_date=sunday_before_first_day_of_month,
-                                                                                                                     end_date=next_saturday_after_last_date_of_month)
+                                                                                                                     start_date=timezone.make_aware(sunday_before_first_day_of_month),
+                                                                                                                     end_date=timezone.make_aware(next_saturday_after_last_date_of_month))
     match_templates = {k:[] for k in [x for x in dates]}
 
     match_invitation_template = loader.get_template("match_invitation_calendar.html")
