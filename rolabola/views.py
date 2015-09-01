@@ -18,6 +18,8 @@ import datetime
 import dateutil.relativedelta
 import json
 from django.utils import timezone
+from guardian.decorators import permission_required_or_403
+
 
 
 
@@ -454,3 +456,19 @@ def venue_create(request):
     return render(request, "venue/venue_create.html", {
         "venue_form":VenueForm,
     })
+
+def turn_message_arg_into_message_kwarg(view_func):
+    def _wrapped_view_func(player, *args, **kwargs):
+        kwargs["message"] = args[0]
+        args = {}
+        return view_func(player, *args, **kwargs)
+    return _wrapped_view_func
+
+
+@turn_message_arg_into_message_kwarg
+@permission_required_or_403("delete_message",(Message,"pk","message"))
+def message_delete(request,message):
+    message = get_object_or_404(Message,pk=message)
+    group = message.group
+    message.delete()
+    return redirect(reverse("Group",args=(group.pk,)))

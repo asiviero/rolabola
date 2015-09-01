@@ -10,3 +10,4 @@ djangoajax
 celery
 redis
 django-appconf
+django-guardian

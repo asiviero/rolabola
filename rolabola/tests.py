@@ -842,10 +842,15 @@ class MessageTest(TestCase):
         self.user_3.join_group(self.group_1)
         self.user_3.join_group(self.group_2)
 
-    def test_user_can_send_message(self):
+        # Message sending
         self.user_1.send_message_group(group=self.group_1,message="test message 1")
         self.user_2.send_message_group(group=self.group_1,message="test message 2")
         self.user_3.send_message_group(group=self.group_1,message="test message 3")
+        self.user_1.send_message_group(group=self.group_2,message="test message 1")
+        self.user_2.send_message_group(group=self.group_2,message="test message 2")
+        self.user_3.send_message_group(group=self.group_2,message="test message 3")
+
+    def test_user_can_send_message(self):
 
         messages_in_group_1 = self.group_1.get_messages()
         self.assertEqual(len(messages_in_group_1),3)
@@ -853,11 +858,51 @@ class MessageTest(TestCase):
         self.assertEqual(messages_in_group_1[1].message,"test message 2")
         self.assertEqual(messages_in_group_1[2].message,"test message 1")
 
-        self.user_1.send_message_group(group=self.group_2,message="test message 1")
-        self.user_2.send_message_group(group=self.group_2,message="test message 2")
-        self.user_3.send_message_group(group=self.group_2,message="test message 3")
-
         messages_in_group_2 = self.group_2.get_messages()
         self.assertEqual(len(messages_in_group_2),2)
         self.assertEqual(messages_in_group_2[0].message,"test message 2")
         self.assertEqual(messages_in_group_2[1].message,"test message 1")
+
+    def test_message_deletion_user(self):
+        messages_in_group_1 = self.group_1.get_messages()
+        c = Client()
+
+        c.post("/login/",{"username":self.user_3.user.email,"password":"123456","form":"login_form"})
+        response = c.post("/message/%d/delete" % messages_in_group_1[0].pk,{},HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(response.status_code,302)
+
+        messages_in_group_1 = self.group_1.get_messages()
+        self.assertEqual(len(messages_in_group_1),2)
+
+        response = c.post("/message/%d/delete" % messages_in_group_1[0].pk,{},HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(response.status_code,403)
+
+        messages_in_group_1 = self.group_1.get_messages()
+        self.assertEqual(len(messages_in_group_1),2)
+
+        messages_in_group_2 = self.group_2.get_messages()
+        response = c.post("/message/%d/delete" % messages_in_group_1[0].pk,{},HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(response.status_code,403)
+
+    def test_message_deletion_admin(self):
+        messages_in_group_1 = self.group_1.get_messages()
+        c = Client()
+
+        c.post("/login/",{"username":self.user_1.user.email,"password":"123456","form":"login_form"})
+        response = c.post("/message/%d/delete" % messages_in_group_1[0].pk,{},HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(response.status_code,302)
+
+        messages_in_group_1 = self.group_1.get_messages()
+        self.assertEqual(len(messages_in_group_1),2)
+
+        response = c.post("/message/%d/delete" % messages_in_group_1[0].pk,{},HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(response.status_code,302)
+
+        messages_in_group_1 = self.group_1.get_messages()
+        self.assertEqual(len(messages_in_group_1),1)
+
+        messages_in_group_2 = self.group_2.get_messages()
+        response = c.post("/message/%d/delete" % messages_in_group_2[0].pk,{},HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(response.status_code,302)
+        messages_in_group_2 = self.group_2.get_messages()
+        self.assertEqual(len(messages_in_group_2),1)

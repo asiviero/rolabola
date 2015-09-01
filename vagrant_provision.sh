@@ -14,3 +14,4 @@ pip3 install djangoajax
 pip3 install celery
 pip3 install redis
 pip3 install django-appconf
+pip3 install django-guardian

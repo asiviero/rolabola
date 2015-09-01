@@ -15,6 +15,8 @@ from celery.utils.log import get_task_logger
 from rolabola.models import *
 from rolabola.widgets import *
 from django.core.urlresolvers import reverse
+from guardian.models import UserObjectPermission
+from guardian.decorators import *
 logger = get_task_logger(__name__)
 
 #import os
@@ -212,11 +214,16 @@ class Player(models.Model):
 
     @user_is_in_group
     def send_message_group(self,group,message):
-        return Message.objects.create(
+        message = Message.objects.create(
             group=group,
             player=self,
             message=message
         )
+        admin_players = group.member_list.filter(membership__role=Membership.GROUP_ADMIN)
+        for player in admin_players:
+            UserObjectPermission.objects.assign_perm("delete_message",user=player.user,obj=message)
+        UserObjectPermission.objects.assign_perm("delete_message",user=self.user,obj=message)
+        return message
 
 
 User.player = property(lambda u: Player.objects.get_or_create(user=u)[0])
@@ -462,8 +469,13 @@ class MatchInvitation(models.Model):
         self.status = self.NOT_CONFIRMED if self.status == self.CONFIRMED else self.CONFIRMED
         self.save()
 
+
 class Message(models.Model):
     player = models.ForeignKey(Player)
     group = models.ForeignKey(Group)
     message = models.TextField()
     created = models.DateTimeField(auto_now_add=True)
+
+    @property
+    def user(self):
+        return self.player.user
