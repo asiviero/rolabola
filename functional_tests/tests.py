@@ -347,7 +347,7 @@ class GroupTest(StaticLiveServerTestCase):
 
         # User enters the desired group url
         self.browser.get("%s/group/%d/" % (self.live_server_url,self.group_public.id))
-
+        time.sleep(5)
         # User clicks the join button
         side_pane = self.browser.find_element_by_class_name('side-pane')
         button = side_pane.find_element_by_css_selector("a.btn-join-group")
@@ -445,7 +445,7 @@ class GroupTest(StaticLiveServerTestCase):
 
         # User goes to group url
         self.browser.get("%s/group/%d/" % (self.live_server_url,self.group_public.id))
-
+        time.sleep(5)
         # In the side pane, user sees a checkbox with regarding group status
         side_pane = self.browser.find_element_by_class_name('side-pane')
         checkbox = side_pane.find_element_by_class_name("public-wrapper").find_element_by_tag_name("input")
@@ -986,8 +986,8 @@ class CalendarTest(StaticLiveServerTestCase):
         self.assertEqual(len(match_invitations),MatchInvitation.objects.filter(
             match__group__pk=self.group_public.pk,
             player__pk=self.user_1.pk,
-            match__date__gte=timezone.make_aware(sunday_before_first_day_of_month),
-            match__date__lte=timezone.make_aware(next_saturday_after_last_date_of_month)
+            match__date__gte=sunday_before_first_day_of_month,
+            match__date__lte=next_saturday_after_last_date_of_month
         ).count())
 
     def test_calendar_navigation_monthly_on_group_page(self):
@@ -1235,6 +1235,7 @@ class MatchConfirmationTest(StaticLiveServerTestCase):
         form_login.find_element_by_css_selector("input[type='submit']").click()
 
         self.browser.get("%s/group/%d/match/%d" % (self.live_server_url,self.group_public.id,self.match_sunday.pk))
+        time.sleep(3)
         confirmed_list = self.browser.find_element_by_class_name("confirmed-list")
         not_confirmed_list = self.browser.find_element_by_class_name("not-confirmed-list")
         disabled_list = not_confirmed_list.find_elements_by_class_name("disabled")
@@ -1455,7 +1456,7 @@ class VenueTest(StaticLiveServerTestCase):
 
     def setUp(self):
         self.browser = webdriver.Firefox()
-        self.browser.implicitly_wait(1.5)
+        self.browser.implicitly_wait(5)
 
         # Create a user
         self.user_1 = PlayerFactory()
@@ -1474,7 +1475,6 @@ class VenueTest(StaticLiveServerTestCase):
         form_login.find_element_by_css_selector("input[type='submit']").click()
 
         self.browser.get("%s/venue/create" % (self.live_server_url,))
-
         self.browser.find_element_by_id("id_quadra").send_keys("Quadra")
         self.browser.find_element_by_class_name("geoposition-search").find_element_by_tag_name("input").send_keys("Rua do Teste")
         time.sleep(5)
@@ -1482,7 +1482,7 @@ class VenueTest(StaticLiveServerTestCase):
         address = self.browser.find_element_by_class_name("geoposition-address").text
 
         self.browser.find_element_by_id("form-venue-creation").find_element_by_css_selector("input[type='submit']").click()
-        time.sleep(3)
+        time.sleep(5)
 
         redirected_url = self.browser.current_url
         self.assertRegexpMatches(redirected_url, "venue/\d+")

@@ -1,12 +1,12 @@
 # Rolabola
 
-[![Build Status](https://travis-ci.org/asiviero/rolabola.svg?branch=develop)](https://travis-ci.org/asiviero/rolabola)
+[![Build Status](http://sites.xpd.com.br:8080/buildStatus/icon?job=RolaBola)](http://sites.xpd.com.br:8080/job/RolaBola/)
 
 Rolabola is a project to create a social network to make it easy for people to set up groups that regularly play sports together. This is very common in our home country (Brazil) and the whole process of scheduling the matches, calling up people, collecting everyone's money, keeping track of who's going, who actually played, how much everyone played and so on is incredibly laboursome, and usually a burden carried by a single person.
 
 A couple of existing websites provide this kind of functionality, however most of them aren't complete enough, are missing parts, and so on. This project is the result of a lot of experimentation and frustration with all these systems, done by people who will actually use this system to manage their own matches.
 
-A complete and detailed roadmap is not defined yet, but it will be some time soon. Our main goals are:
+A complete and detailed roadmap is not defined yet, but it will be some time soon. Our main goals are: 
 
 1. A fully functional website to achieve group making and match scheduling, with some basic secondary functions (such as keeping track of goals scored and other kinds of statistics)
 1. A kind of bookkeeping system, through which users would be able to pay for the matches. This would be likely through PayPal since it makes money available in a matter of days. This could be replaced entirely for self-hosting solutions, however our focus is also to provide a full solution in the cloud as well.
