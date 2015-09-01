@@ -51,8 +51,8 @@ def match_didnt_reach_max_confirmations(view_func):
 
 def user_is_in_group(view_func):
     def _wrapped_view_func(player, *args, **kwargs):
-        group = get_object_or_404(Match, pk=kwargs["group"].pk)
-        if Membership.objects.get(group__pk=group.pk,member__pk=player.pk):
+        group = get_object_or_404(Group, pk=kwargs["group"].pk)
+        if Membership.objects.filter(group__pk=group.pk,member__pk=player.pk).count():
             return view_func(player, *args, **kwargs)
         pass
     return _wrapped_view_func
@@ -210,6 +210,15 @@ class Player(models.Model):
         Membership.objects.get(member__pk=self.pk,group__pk=group.pk).toggle_automatic_confirmation()
         return Membership.objects.get(member__pk=self.pk,group__pk=group.pk).automatic_confirmation
 
+    @user_is_in_group
+    def send_message_group(self,group,message):
+        return Message.objects.create(
+            group=group,
+            player=self,
+            message=message
+        )
+
+
 User.player = property(lambda u: Player.objects.get_or_create(user=u)[0])
 
 
@@ -276,6 +285,9 @@ class Group(models.Model):
         if self.picture == Group._meta.get_field("picture").get_default():
             return self.picture
         return settings.MEDIA_URL + str(self.picture)
+
+    def get_messages(self):
+        return self.message_set.order_by("-created")
 
 @task(name="schedule_match_task")
 def schedule_match_task(player,group,date,max_participants,min_participants,price):
@@ -449,3 +461,9 @@ class MatchInvitation(models.Model):
     def revert_confirmation(self):
         self.status = self.NOT_CONFIRMED if self.status == self.CONFIRMED else self.CONFIRMED
         self.save()
+
+class Message(models.Model):
+    player = models.ForeignKey(Player)
+    group = models.ForeignKey(Group)
+    message = models.TextField()
+    created = models.DateTimeField(auto_now_add=True)

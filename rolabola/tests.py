@@ -826,3 +826,38 @@ class MatchConfirmationTest(TestCase):
         self.assertEqual(user_2_invitation.status,MatchInvitation.CONFIRMED)
         user_3_invitation = MatchInvitation.objects.get(match__pk=new_match.pk,player__pk=self.user_3.pk)
         self.assertEqual(user_3_invitation.status,MatchInvitation.NOT_CONFIRMED)
+
+class MessageTest(TestCase):
+
+    def setUp(self):
+        self.user_1 = PlayerFactory()
+        self.user_2 = PlayerFactory()
+        self.user_3 = PlayerFactory()
+        self.user_4 = PlayerFactory()
+        self.group_1 = self.user_1.create_group("Group 1", public=True)
+        self.group_2 = self.user_1.create_group("Group 2", public=False)
+        self.user_2.join_group(self.group_1)
+        self.user_2.join_group(self.group_2)
+        self.user_1.accept_request_group(group=self.group_2,user=self.user_2)
+        self.user_3.join_group(self.group_1)
+        self.user_3.join_group(self.group_2)
+
+    def test_user_can_send_message(self):
+        self.user_1.send_message_group(group=self.group_1,message="test message 1")
+        self.user_2.send_message_group(group=self.group_1,message="test message 2")
+        self.user_3.send_message_group(group=self.group_1,message="test message 3")
+
+        messages_in_group_1 = self.group_1.get_messages()
+        self.assertEqual(len(messages_in_group_1),3)
+        self.assertEqual(messages_in_group_1[0].message,"test message 3")
+        self.assertEqual(messages_in_group_1[1].message,"test message 2")
+        self.assertEqual(messages_in_group_1[2].message,"test message 1")
+
+        self.user_1.send_message_group(group=self.group_2,message="test message 1")
+        self.user_2.send_message_group(group=self.group_2,message="test message 2")
+        self.user_3.send_message_group(group=self.group_2,message="test message 3")
+
+        messages_in_group_2 = self.group_2.get_messages()
+        self.assertEqual(len(messages_in_group_2),2)
+        self.assertEqual(messages_in_group_2[0].message,"test message 2")
+        self.assertEqual(messages_in_group_2[1].message,"test message 1")
