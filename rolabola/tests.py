@@ -869,7 +869,7 @@ class MessageTest(TestCase):
 
         c.post("/login/",{"username":self.user_3.user.email,"password":"123456","form":"login_form"})
         response = c.post("/message/%d/delete" % messages_in_group_1[0].pk,{},HTTP_X_REQUESTED_WITH='XMLHttpRequest')
-        self.assertEqual(response.status_code,302)
+        self.assertEqual(response.status_code,200)
 
         messages_in_group_1 = self.group_1.get_messages()
         self.assertEqual(len(messages_in_group_1),2)
@@ -890,19 +890,19 @@ class MessageTest(TestCase):
 
         c.post("/login/",{"username":self.user_1.user.email,"password":"123456","form":"login_form"})
         response = c.post("/message/%d/delete" % messages_in_group_1[0].pk,{},HTTP_X_REQUESTED_WITH='XMLHttpRequest')
-        self.assertEqual(response.status_code,302)
+        self.assertEqual(response.status_code,200)
 
         messages_in_group_1 = self.group_1.get_messages()
         self.assertEqual(len(messages_in_group_1),2)
 
         response = c.post("/message/%d/delete" % messages_in_group_1[0].pk,{},HTTP_X_REQUESTED_WITH='XMLHttpRequest')
-        self.assertEqual(response.status_code,302)
+        self.assertEqual(response.status_code,200)
 
         messages_in_group_1 = self.group_1.get_messages()
         self.assertEqual(len(messages_in_group_1),1)
 
         messages_in_group_2 = self.group_2.get_messages()
         response = c.post("/message/%d/delete" % messages_in_group_2[0].pk,{},HTTP_X_REQUESTED_WITH='XMLHttpRequest')
-        self.assertEqual(response.status_code,302)
+        self.assertEqual(response.status_code,200)
         messages_in_group_2 = self.group_2.get_messages()
         self.assertEqual(len(messages_in_group_2),1)
