@@ -74,6 +74,17 @@
     <div class="calendar-table">
       {{ calendar_view }}
     </div>
+    <div id="message-wall">
+      {% for message in group.get_messages %}
+        {{ message.render }}
+      {% endfor %}
+      <div id="message-form-wrapper">
+        <form id="message-form" data-url="{% url 'message-send' group.pk %}">
+          {% csrf_token %}
+          {{ message_form }}
+        </form>
+      </div>
+    </div>
   </div>
   {% if is_admin %}
   <a class="btn-floating btn-large btn-match-create green" href="{% url 'group-match-create' group.pk %}">

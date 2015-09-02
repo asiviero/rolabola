@@ -20,9 +20,6 @@ import json
 from django.utils import timezone
 from guardian.decorators import permission_required_or_403
 
-
-
-
 # Create your views here.
 @login_required
 def home(request):
@@ -231,7 +228,8 @@ def group(request,group):
         "request_list":group.member_pending_list.all(),
         "is_admin":is_admin,
         "calendar_view":calendar_view,
-        "automatic_confirmation":automatic_confirmation
+        "automatic_confirmation":automatic_confirmation,
+        "message_form":MessageForm
     })
 
 @login_required
@@ -430,6 +428,22 @@ def group_match_reject(request,group,match):
     }
 
     return response
+
+@login_required
+@group_membership_required
+@ajax
+def message_send(request,group):
+    group = get_object_or_404(Group,pk=group)
+    message = request.user.player.send_message_group(group=group,message=request.POST.get("message"))
+    if not message is None:
+        message_list_template = loader.get_template("message/message.html")
+        return {
+            "prepend-fragments" : {
+                "#message-wall" : message_list_template.render({"message":message})
+            }
+        }
+    else:
+        return HttpResponseServerError()
 
 @login_required
 def venue(request,venue):

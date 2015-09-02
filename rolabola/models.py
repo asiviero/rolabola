@@ -17,6 +17,7 @@ from rolabola.widgets import *
 from django.core.urlresolvers import reverse
 from guardian.models import UserObjectPermission
 from guardian.decorators import *
+from django.template import  loader
 logger = get_task_logger(__name__)
 
 #import os
@@ -479,3 +480,15 @@ class Message(models.Model):
     @property
     def user(self):
         return self.player.user
+
+    def render(self):
+        message_list_template = loader.get_template("message/message.html")
+        return message_list_template.render({"message":self})
+
+class MessageForm(ModelForm):
+    class Meta:
+        model = Message
+        fields = ["message"]
+        widgets = {
+            "message" : forms.TextInput
+        }
