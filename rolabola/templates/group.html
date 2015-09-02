@@ -75,8 +75,8 @@
       {{ calendar_view }}
     </div>
     <div id="message-wall">
-      {% for message in group.get_messages %}
-        {{ message.render }}
+      {% for message in messages %}
+        {{ message }}
       {% endfor %}
       <div id="message-form-wrapper">
         <form id="message-form" data-url="{% url 'message-send' group.pk %}">

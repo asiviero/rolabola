@@ -481,10 +481,6 @@ class Message(models.Model):
     def user(self):
         return self.player.user
 
-    def render(self):
-        message_list_template = loader.get_template("message/message.html")
-        return message_list_template.render({"message":self})
-
 class MessageForm(ModelForm):
     class Meta:
         model = Message

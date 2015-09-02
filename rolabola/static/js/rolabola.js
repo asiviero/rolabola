@@ -103,6 +103,10 @@
         "message" : $(this).find("#id_message").val()
       })
     })
+
+    $(".btn-delete-message").click(function(e) {
+      ajaxPost($(this).data("url"), {})
+    })
   })
 
 

@@ -1515,6 +1515,7 @@ class MessageTest(StaticLiveServerTestCase):
         self.user_1.accept_request_group(group=self.group_2,user=self.user_2)
         self.user_3.join_group(self.group_1)
         self.user_3.join_group(self.group_2)
+        self.group_3 = self.user_2.create_group("Group 3", public=True)
 
         # Message sending
         self.user_1.send_message_group(group=self.group_1,message="test message 1")
@@ -1576,3 +1577,93 @@ class MessageTest(StaticLiveServerTestCase):
         messages = message_wall.find_elements_by_class_name("message-wrapper")
         self.assertEqual(len(messages),4)
         self.assertEqual(messages[0].find_element_by_class_name("message-text").text,"Message sent")
+
+    def test_user_can_delete_own_messages(self):
+        self.browser.get(self.live_server_url)
+
+        form_login = self.browser.find_element_by_id('form_login')
+        form_login.find_element_by_id("id_username").send_keys(self.user_2.user.username)
+        form_login.find_element_by_id("id_password").send_keys("123456")
+        form_login.find_element_by_css_selector("input[type='submit']").click()
+
+        self.browser.get("%s/group/%d/" % (self.live_server_url,self.group_1.id))
+
+        # User sees the message wall
+        message_wall = self.browser.find_element_by_id("message-wall")
+
+        # User sees the 3 messages
+        messages = message_wall.find_elements_by_class_name("message-wrapper")
+        """self.user_1.send_message_group(group=self.group_1,message="test message 1")
+        self.user_2.send_message_group(group=self.group_1,message="test message 2")
+        self.user_3.send_message_group(group=self.group_1,message="test message 3")"""
+
+        self.assertEqual(len(messages[0].find_elements_by_class_name("btn-delete-message")),0)
+        self.assertEqual(len(messages[1].find_elements_by_class_name("btn-delete-message")),1)
+        self.assertEqual(len(messages[2].find_elements_by_class_name("btn-delete-message")),0)
+
+        # User clicks the delete button
+        messages[1].find_element_by_class_name("btn-delete-message").click()
+
+        time.sleep(3)
+
+        # Message disappears
+        messages = message_wall.find_elements_by_class_name("message-wrapper")
+        self.assertEqual(len(messages),2)
+        self.assertEqual(len(messages[0].find_elements_by_class_name("btn-delete-message")),0)
+        self.assertEqual(len(messages[1].find_elements_by_class_name("btn-delete-message")),0)
+        self.assertEqual(messages[0].find_element_by_class_name("message-text").text,"test message 3")
+        self.assertEqual(messages[1].find_element_by_class_name("message-text").text,"test message 1")
+
+        self.browser.get("%s/group/%d/" % (self.live_server_url,self.group_1.id))
+        message_wall = self.browser.find_element_by_id("message-wall")
+        messages = message_wall.find_elements_by_class_name("message-wrapper")
+        self.assertEqual(len(messages),2)
+        self.assertEqual(len(messages[0].find_elements_by_class_name("btn-delete-message")),0)
+        self.assertEqual(len(messages[1].find_elements_by_class_name("btn-delete-message")),0)
+        self.assertEqual(messages[0].find_element_by_class_name("message-text").text,"test message 3")
+        self.assertEqual(messages[1].find_element_by_class_name("message-text").text,"test message 1")
+
+    def test_admin_can_delete_any_message(self):
+        self.browser.get(self.live_server_url)
+
+        form_login = self.browser.find_element_by_id('form_login')
+        form_login.find_element_by_id("id_username").send_keys(self.user_1.user.username)
+        form_login.find_element_by_id("id_password").send_keys("123456")
+        form_login.find_element_by_css_selector("input[type='submit']").click()
+
+        self.browser.get("%s/group/%d/" % (self.live_server_url,self.group_1.id))
+
+        # User sees the message wall
+        message_wall = self.browser.find_element_by_id("message-wall")
+
+        # User sees the 3 messages
+        messages = message_wall.find_elements_by_class_name("message-wrapper")
+        """self.user_1.send_message_group(group=self.group_1,message="test message 1")
+        self.user_2.send_message_group(group=self.group_1,message="test message 2")
+        self.user_3.send_message_group(group=self.group_1,message="test message 3")"""
+
+        self.assertEqual(len(messages[0].find_elements_by_class_name("btn-delete-message")),1)
+        self.assertEqual(len(messages[1].find_elements_by_class_name("btn-delete-message")),1)
+        self.assertEqual(len(messages[2].find_elements_by_class_name("btn-delete-message")),1)
+
+        # User clicks the delete button
+        messages[1].find_element_by_class_name("btn-delete-message").click()
+
+        time.sleep(3)
+
+        # Message disappears
+        messages = message_wall.find_elements_by_class_name("message-wrapper")
+        self.assertEqual(len(messages),2)
+        self.assertEqual(len(messages[0].find_elements_by_class_name("btn-delete-message")),1)
+        self.assertEqual(len(messages[1].find_elements_by_class_name("btn-delete-message")),1)
+        self.assertEqual(messages[0].find_element_by_class_name("message-text").text,"test message 3")
+        self.assertEqual(messages[1].find_element_by_class_name("message-text").text,"test message 1")
+
+        self.browser.get("%s/group/%d/" % (self.live_server_url,self.group_1.id))
+        message_wall = self.browser.find_element_by_id("message-wall")
+        messages = message_wall.find_elements_by_class_name("message-wrapper")
+        self.assertEqual(len(messages),2)
+        self.assertEqual(len(messages[0].find_elements_by_class_name("btn-delete-message")),1)
+        self.assertEqual(len(messages[1].find_elements_by_class_name("btn-delete-message")),1)
+        self.assertEqual(messages[0].find_element_by_class_name("message-text").text,"test message 3")
+        self.assertEqual(messages[1].find_element_by_class_name("message-text").text,"test message 1")

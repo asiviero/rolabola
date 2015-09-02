@@ -1,5 +1,8 @@
-<div class="message-wrapper">
+<div class="message-wrapper" data-message="{{message.pk}}">
   <img class="message-author-img img-profile circle" src="{{ message.player.fetch_picture }}" />
   <div class="message-author-name">{{ message.player }}</div>
   <div class="message-text">{{message.message}}</div>
+  {% if player.pk == message.player.pk or is_admin %}
+    <a class="btn btn-small red btn-delete-message" data-url="{% url 'message-delete' message.pk %}">Delete</a>
+  {% endif %}
 </div>

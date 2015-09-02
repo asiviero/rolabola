@@ -221,6 +221,10 @@ def group(request,group):
 
     calendar_view = calendar_template.render({"days_label":days,"weeks":weeks,"today":today})
 
+    message_list_template = loader.get_template("message/message.html")
+    rendered_messages = [message_list_template.render({"message":message,"is_admin":is_admin,"player":request.user.player}) for message in group.get_messages()]
+    # message_list_template.render({"message":self})
+
     return render(request, "group.html", {
         "group":group,
         "user_in_group":user_in_group,
@@ -229,7 +233,8 @@ def group(request,group):
         "is_admin":is_admin,
         "calendar_view":calendar_view,
         "automatic_confirmation":automatic_confirmation,
-        "message_form":MessageForm
+        "message_form":MessageForm,
+        "messages":rendered_messages
     })
 
 @login_required
@@ -481,8 +486,14 @@ def turn_message_arg_into_message_kwarg(view_func):
 
 @turn_message_arg_into_message_kwarg
 @permission_required_or_403("delete_message",(Message,"pk","message"))
+@ajax
 def message_delete(request,message):
     message = get_object_or_404(Message,pk=message)
+    pk = message.pk
     group = message.group
     message.delete()
-    return redirect(reverse("Group",args=(group.pk,)))
+    return {
+        "fragments" : {
+            ".message-wrapper[data-message=%s]" % pk : ""
+        }
+    }
