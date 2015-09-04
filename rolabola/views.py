@@ -169,9 +169,11 @@ def search(request):
             Q(player__nickname__icontains=request.GET.get("name"))
         )
     elif request.GET.get("qtype") == "Group":
+        friend_list = [x.pk for x in request.user.player.friend_list.all()]
+        friend_list.append(request.user.player.pk)
         results = Group.objects.filter(
             Q(name__icontains=request.GET.get("name"))
-        ).annotate(member_list_count=Count(Q(membership__member__in=[x.pk for x in request.user.player.friend_list.all()]),distinct=True)).order_by("-member_list_count")
+        ).annotate(member_list_count=Count(Q(membership__member__in=friend_list),distinct=True)).order_by("-member_list_count")
 
         results = [{"res":x,
                           "member":False if request.user.is_anonymous() else x.member_list.filter(pk=request.user.player.pk).exists() ,
