@@ -169,12 +169,22 @@ def search(request):
             Q(player__nickname__icontains=request.GET.get("name"))
         )
     elif request.GET.get("qtype") == "Group":
-        friend_list = [x.pk for x in request.user.player.friend_list.all()]
-        friend_list.append(request.user.player.pk)
-        results = Group.objects.filter(
-            Q(name__icontains=request.GET.get("name"))
-        ).annotate(member_list_count=Count(Q(membership__member__in=friend_list),distinct=True)).order_by("-member_list_count")
 
+        if not request.user.is_anonymous():
+            friend_list = [x.pk for x in request.user.player.friend_list.all()]
+            if len(friend_list) :
+                results = Group.objects.filter(
+                    Q(name__icontains=request.GET.get("name"))
+                ).annotate(member_list_count=Count(Q(membership__member__in=friend_list),distinct=True)).order_by("-member_list_count")
+            else :
+                results = Group.objects.filter(
+                    Q(name__icontains=request.GET.get("name"))
+                )
+        else :
+            print('ANON')
+            results = Group.objects.filter(
+                Q(name__icontains=request.GET.get("name"))
+            )
         results = [{"res":x,
                           "member":False if request.user.is_anonymous() else x.member_list.filter(pk=request.user.player.pk).exists() ,
                           "membership_requested":False if request.user.is_anonymous() else x.member_pending_list.filter(pk=request.user.player.pk).exists()

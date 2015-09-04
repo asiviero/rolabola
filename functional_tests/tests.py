@@ -262,7 +262,7 @@ class SearchOrderTest(StaticLiveServerTestCase):
 
     def tearDown(self):
         self.browser.quit()
-        
+
     def test_search_results_group_order_by_friends_in_group(self):
         user_1 = PlayerFactory()
         user_2 = PlayerFactory()
@@ -305,7 +305,7 @@ class SearchOrderTest(StaticLiveServerTestCase):
 
         # User gets redirected to registration page, where he sees
         # the results of his search
-        time.sleep(5)
+        time.sleep(1)
         redirected_url = self.browser.current_url
 
         # User sees an option to search for groups as well

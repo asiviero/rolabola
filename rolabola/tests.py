@@ -441,13 +441,15 @@ class SearchTest(TestCase):
 
         results = Group.objects.filter(
             Q(name__icontains="Group") &
-            Q(membership__member__in=[user_2.pk])
+            Q(membership__member__in=[user_1.pk,user_2.pk])
         )
+        # print(results)
 
         # Search will be performed
         results = Group.objects.filter(
             Q(name__icontains="Group")
-        ).annotate(member_list_count=Count(Q(membership__member__in=[x.pk for x in user_1.friend_list.all()]),distinct=True)).order_by("-member_list_count")
+        ).annotate(member_list_count=Count(Q(membership__member__in=([x.pk for x in user_1.friend_list.all()])),distinct=True)).order_by("-member_list_count")
+        # print(results)
 
         self.assertEqual(results[0].pk,group_2.pk)
         self.assertEqual(results[1].pk,group_3.pk)
