@@ -255,6 +255,74 @@ class SearchTest(StaticLiveServerTestCase):
                     buttons = result.find_elements_by_css_selector("a.disabled.btn-join-group i.material-icons")
                     self.assertEqual(len(buttons),1)
 
+class SearchOrderTest(StaticLiveServerTestCase):
+    def setUp(self):
+        self.browser = webdriver.Firefox()
+        self.browser.implicitly_wait(1.5)
+
+    def tearDown(self):
+        self.browser.quit()
+        
+    def test_search_results_group_order_by_friends_in_group(self):
+        user_1 = PlayerFactory()
+        user_2 = PlayerFactory()
+        user_3 = PlayerFactory()
+        user_4 = PlayerFactory()
+        user_5 = PlayerFactory()
+        user_6 = PlayerFactory()
+        user_7 = PlayerFactory()
+
+        group_1 = user_1.create_group("Group 1", public=True)
+        group_2 = user_1.create_group("Group 2", public=True)
+        group_3 = user_1.create_group("Group 3", public=True)
+        group_4 = user_4.create_group("Group 4", public=True)
+
+        user_1.add_user(user_2)
+        user_2.accept_request_from_friend(user_1)
+        user_1.add_user(user_3)
+        user_3.accept_request_from_friend(user_1)
+
+        user_2.join_group(group_2)
+        user_2.join_group(group_3)
+        user_3.join_group(group_2)
+        user_5.join_group(group_4)
+        user_6.join_group(group_4)
+        user_7.join_group(group_4)
+
+        self.browser.get(self.live_server_url)
+
+        form_login = self.browser.find_element_by_id('form_login')
+        form_login.find_element_by_id("id_username").send_keys(user_1.user.username)
+        form_login.find_element_by_id("id_password").send_keys("123456")
+        form_login.find_element_by_css_selector("input[type='submit']").click()
+
+        # User sees a search box
+        form_search = self.browser.find_element_by_id('form_search')
+
+        # User types in another user name
+        form_search.find_element_by_css_selector("input[type='text']").send_keys("Group")
+        form_search.find_element_by_css_selector("input[type='text']").send_keys(Keys.ENTER)
+
+        # User gets redirected to registration page, where he sees
+        # the results of his search
+        time.sleep(5)
+        redirected_url = self.browser.current_url
+
+        # User sees an option to search for groups as well
+        self.browser.find_element_by_class_name("side-pane").find_element_by_link_text("Groups").click()
+        time.sleep(1)
+        redirected_url = self.browser.current_url
+
+        self.assertRegexpMatches(redirected_url, "search/*")
+
+        # User sees a list with the results
+        result_list = self.browser.find_element_by_class_name("group-search-results")
+        results = result_list.find_elements_by_tag_name("li")
+        self.assertIn(group_2.name,results[0].text)
+        self.assertIn(group_3.name,results[1].text)
+        self.assertIn(group_1.name,results[2].text)
+        self.assertIn(group_4.name,results[3].text)
+
 class GroupTest(StaticLiveServerTestCase):
 
     user_1 = None

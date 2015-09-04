@@ -1,4 +1,5 @@
 from django.test import TestCase, Client
+from django.db.models import Count, When, F
 from django.test.utils import override_settings
 from django.contrib.auth.models import User
 from django.utils import timezone
@@ -411,6 +412,46 @@ class SearchTest(TestCase):
 
         self.assertContains(response,group_1.name)
         self.assertNotContains(response,group_2.name)
+
+    def test_search_must_be_ordered_by_number_of_friends(self):
+        user_1 = PlayerFactory()
+        user_2 = PlayerFactory()
+        user_3 = PlayerFactory()
+        user_4 = PlayerFactory()
+        user_5 = PlayerFactory()
+        user_6 = PlayerFactory()
+        user_7 = PlayerFactory()
+
+        group_1 = user_1.create_group("Group 1", public=True)
+        group_2 = user_1.create_group("Group 2", public=True)
+        group_3 = user_1.create_group("Group 3", public=True)
+        group_4 = user_4.create_group("Group 4", public=True)
+
+        user_1.add_user(user_2)
+        user_2.accept_request_from_friend(user_1)
+        user_1.add_user(user_3)
+        user_3.accept_request_from_friend(user_1)
+
+        user_2.join_group(group_2)
+        user_2.join_group(group_3)
+        user_3.join_group(group_2)
+        user_5.join_group(group_4)
+        user_6.join_group(group_4)
+        user_7.join_group(group_4)
+
+        results = Group.objects.filter(
+            Q(name__icontains="Group") &
+            Q(membership__member__in=[user_2.pk])
+        )
+
+        # Search will be performed
+        results = Group.objects.filter(
+            Q(name__icontains="Group")
+        ).annotate(member_list_count=Count(Q(membership__member__in=[x.pk for x in user_1.friend_list.all()]),distinct=True)).order_by("-member_list_count")
+
+        self.assertEqual(results[0].pk,group_2.pk)
+        self.assertEqual(results[1].pk,group_3.pk)
+        self.assertEqual(results[2].pk,group_1.pk)
 
 class MatchTest(TestCase):
 

@@ -6,6 +6,7 @@ from django.contrib.auth import authenticate, login
 from django.contrib.auth.models import User
 from django.forms.models import inlineformset_factory
 from django.template import Context, Template, loader
+from django.db.models import Count, When, F
 from rolabola.models import *
 from rolabola.forms import SearchForm
 from rolabola.decorators import *
@@ -170,7 +171,7 @@ def search(request):
     elif request.GET.get("qtype") == "Group":
         results = Group.objects.filter(
             Q(name__icontains=request.GET.get("name"))
-        )
+        ).annotate(member_list_count=Count(Q(membership__member__in=[x.pk for x in request.user.player.friend_list.all()]),distinct=True)).order_by("-member_list_count")
 
         results = [{"res":x,
                           "member":False if request.user.is_anonymous() else x.member_list.filter(pk=request.user.player.pk).exists() ,
