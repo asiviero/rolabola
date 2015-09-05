@@ -278,11 +278,6 @@ class SearchTest(StaticLiveServerTestCase):
         self.assertRegexpMatches(redirected_url, "search/*")
         self.assertIn(self.user_2.user.first_name,self.browser.find_element_by_class_name("main-content").text)
 
-        """self.group_1 = self.user_2.create_group("%s's Public Group" % (self.user_2.nickname),public=True)
-        self.group_2 = self.user_2.create_group("%s's Private Group" % (self.user_2.nickname),public=False)
-        self.group_3 = self.user_2.create_group("%s's Joined Group" % (self.user_2.nickname),public=True)
-        self.group_4 = self.user_2.create_group("%s's Private Joined Group" % (self.user_2.nickname),public=False)
-        """
         # User sees an option to search for groups as well
         self.browser.find_element_by_class_name("side-pane").find_element_by_link_text("Groups").click()
         time.sleep(1)
@@ -301,39 +296,39 @@ class SearchOrderTest(StaticLiveServerTestCase):
         self.browser = webdriver.Firefox()
         self.browser.implicitly_wait(1.5)
 
+        self.user_1 = PlayerFactory()
+        self.user_2 = PlayerFactory()
+        self.user_3 = PlayerFactory()
+        self.user_4 = PlayerFactory()
+        self.user_5 = PlayerFactory()
+        self.user_6 = PlayerFactory()
+        self.user_7 = PlayerFactory()
+
+        self.group_1 = self.user_1.create_group("Group 1", public=True)
+        self.group_2 = self.user_1.create_group("Group 2", public=True)
+        self.group_3 = self.user_1.create_group("Group 3", public=True)
+        self.group_4 = self.user_4.create_group("Group 4", public=True)
+
+        self.user_1.add_user(self.user_2)
+        self.user_2.accept_request_from_friend(self.user_1)
+        self.user_1.add_user(self.user_3)
+        self.user_3.accept_request_from_friend(self.user_1)
+
+        self.user_2.join_group(self.group_2)
+        self.user_2.join_group(self.group_3)
+        self.user_3.join_group(self.group_2)
+        self.user_5.join_group(self.group_4)
+        self.user_6.join_group(self.group_4)
+        self.user_7.join_group(self.group_4)
+
     def tearDown(self):
         self.browser.quit()
 
     def test_search_results_group_order_by_friends_in_group(self):
-        user_1 = PlayerFactory()
-        user_2 = PlayerFactory()
-        user_3 = PlayerFactory()
-        user_4 = PlayerFactory()
-        user_5 = PlayerFactory()
-        user_6 = PlayerFactory()
-        user_7 = PlayerFactory()
-
-        group_1 = user_1.create_group("Group 1", public=True)
-        group_2 = user_1.create_group("Group 2", public=True)
-        group_3 = user_1.create_group("Group 3", public=True)
-        group_4 = user_4.create_group("Group 4", public=True)
-
-        user_1.add_user(user_2)
-        user_2.accept_request_from_friend(user_1)
-        user_1.add_user(user_3)
-        user_3.accept_request_from_friend(user_1)
-
-        user_2.join_group(group_2)
-        user_2.join_group(group_3)
-        user_3.join_group(group_2)
-        user_5.join_group(group_4)
-        user_6.join_group(group_4)
-        user_7.join_group(group_4)
-
         self.browser.get(self.live_server_url)
 
         form_login = self.browser.find_element_by_id('form_login')
-        form_login.find_element_by_id("id_username").send_keys(user_1.user.username)
+        form_login.find_element_by_id("id_username").send_keys(self.user_1.user.username)
         form_login.find_element_by_id("id_password").send_keys("123456")
         form_login.find_element_by_css_selector("input[type='submit']").click()
 
@@ -359,10 +354,50 @@ class SearchOrderTest(StaticLiveServerTestCase):
         # User sees a list with the results
         result_list = self.browser.find_element_by_class_name("group-search-results")
         results = result_list.find_elements_by_tag_name("li")
-        self.assertIn(group_2.name,results[0].text)
-        self.assertIn(group_3.name,results[1].text)
-        self.assertIn(group_1.name,results[2].text)
-        self.assertIn(group_4.name,results[3].text)
+        self.assertIn(self.group_2.name,results[0].text)
+        self.assertIn(self.group_3.name,results[1].text)
+        self.assertIn(self.group_1.name,results[2].text)
+        self.assertIn(self.group_4.name,results[3].text)
+
+    def test_friends_in_groups_are_displayed(self):
+        self.browser.get(self.live_server_url)
+
+        form_login = self.browser.find_element_by_id('form_login')
+        form_login.find_element_by_id("id_username").send_keys(self.user_1.user.username)
+        form_login.find_element_by_id("id_password").send_keys("123456")
+        form_login.find_element_by_css_selector("input[type='submit']").click()
+
+        # User sees a search box
+        form_search = self.browser.find_element_by_id('form_search')
+
+        # User types in another user name
+        form_search.find_element_by_css_selector("input[type='text']").send_keys("Group")
+        form_search.find_element_by_css_selector("input[type='text']").send_keys(Keys.ENTER)
+
+        # User gets redirected to registration page, where he sees
+        # the results of his search
+        time.sleep(1)
+        redirected_url = self.browser.current_url
+
+        # User sees an option to search for groups as well
+        self.browser.find_element_by_class_name("side-pane").find_element_by_link_text("Groups").click()
+        time.sleep(1)
+        redirected_url = self.browser.current_url
+
+        self.assertRegexpMatches(redirected_url, "search/*")
+
+        # User sees a list with the results
+        result_list = self.browser.find_element_by_class_name("group-search-results")
+        results = result_list.find_elements_by_tag_name("li")
+        for (key,result) in enumerate(results):
+            if key == 0:
+                self.assertEqual(len(result.find_element_by_class_name("friends-in-group-wrapper").find_elements_by_tag_name("img")),2)
+            elif key == 1:
+                self.assertEqual(len(result.find_element_by_class_name("friends-in-group-wrapper").find_elements_by_tag_name("img")),1)
+            else:
+                self.assertEqual(len(result.find_element_by_class_name("friends-in-group-wrapper").find_elements_by_tag_name("img")),0)
+
+
 
 class GroupTest(StaticLiveServerTestCase):
 
