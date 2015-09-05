@@ -185,10 +185,14 @@ def search(request):
             results = Group.objects.filter(
                 Q(name__icontains=request.GET.get("name"))
             )
-        results = [{"res":x,
-                          "member":False if request.user.is_anonymous() else x.member_list.filter(pk=request.user.player.pk).exists() ,
-                          "membership_requested":False if request.user.is_anonymous() else x.member_pending_list.filter(pk=request.user.player.pk).exists()
-                        } for x in results]
+
+        group_result_list_template = loader.get_template("search/search_result_group.html")
+        results = [group_result_list_template.render({
+            "group":x,
+            "member":False if request.user.is_anonymous() else x.member_list.filter(pk=request.user.player.pk).exists() ,
+            "membership_requested":False if request.user.is_anonymous() else x.member_pending_list.filter(pk=request.user.player.pk).exists()
+        }) for x in results]
+        
     return render(request, "search_results.html", {
         "model" : request.GET.get("qtype"),
         "name_query" : urllib.parse.urlencode({"name":request.GET.get("name")}),
