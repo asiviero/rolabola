@@ -297,6 +297,9 @@ class Group(models.Model):
     def get_messages(self):
         return self.message_set.order_by("-created")
 
+    def get_friends_from_user(self,player):
+        return self.member_list.filter(membership__member__in=player.friend_list.all())
+
 @task(name="schedule_match_task")
 def schedule_match_task(player,group,date,max_participants,min_participants,price):
     try:

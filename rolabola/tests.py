@@ -100,7 +100,6 @@ class FriendshipTest(TestCase):
 
 class GroupTest(TestCase):
 
-
     def test_user_can_join_public_group(self):
         user_1 = PlayerFactory()
         group_1 = GroupFactory(public=True)
@@ -346,7 +345,29 @@ class GroupTest(TestCase):
         # Check if user 4 was not invited
         self.assertEqual(MatchInvitation.objects.filter(player__pk=user_4.id).count(),1)
 
+    def test_retrieve_friends_in_group(self):
+        user_1 = PlayerFactory()
+        user_2 = PlayerFactory()
+        user_3 = PlayerFactory()
+        user_4 = PlayerFactory()
 
+        group_1 = user_1.create_group("Group 1", public=True)
+
+        user_1.add_user(user_2)
+        user_1.add_user(user_3)
+        user_2.accept_request_from_friend(user_1)
+        user_3.accept_request_from_friend(user_1)
+
+        user_2.join_group(group_1)
+        user_3.join_group(group_1)
+        user_4.join_group(group_1)
+
+        friends = group_1.get_friends_from_user(user_1)
+
+        self.assertEqual(len(friends),2)
+        self.assertIn(user_2,friends)
+        self.assertIn(user_3,friends)
+        self.assertNotIn(user_4,friends)
 
 
 class RegistrationTest(TestCase):
