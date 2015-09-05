@@ -181,7 +181,6 @@ def search(request):
                     Q(name__icontains=request.GET.get("name"))
                 )
         else :
-            print('ANON')
             results = Group.objects.filter(
                 Q(name__icontains=request.GET.get("name"))
             )
@@ -191,7 +190,7 @@ def search(request):
             "group":x,
             "member":False if request.user.is_anonymous() else x.member_list.filter(pk=request.user.player.pk).exists() ,
             "membership_requested":False if request.user.is_anonymous() else x.member_pending_list.filter(pk=request.user.player.pk).exists(),
-            "friends_in_group":x.get_friends_from_user(request.user.player)
+            "friends_in_group":[] if request.user.is_anonymous else x.get_friends_from_user(request.user.player)
         }) for x in results]
 
     return render(request, "search_results.html", {
