@@ -6,12 +6,12 @@ Rolabola is a project to create a social network to make it easy for people to s
 
 A couple of existing websites provide this kind of functionality, however most of them aren't complete enough, are missing parts, and so on. This project is the result of a lot of experimentation and frustration with all these systems, done by people who will actually use this system to manage their own matches.
 
-A complete and detailed roadmap is not defined yet, but it will be some time soon. Our main goals are: 
+A complete and detailed roadmap is not defined yet, but it will be some time soon. Our main goals are:
 
 1. A fully functional website to achieve group making and match scheduling, with some basic secondary functions (such as keeping track of goals scored and other kinds of statistics)
 1. A kind of bookkeeping system, through which users would be able to pay for the matches. This would be likely through PayPal since it makes money available in a matter of days. This could be replaced entirely for self-hosting solutions, however our focus is also to provide a full solution in the cloud as well.
 1. Android and iOS apps, of course. Most of the functionality could be done in one click, so it could also be ported to a mobile phone.
-1. More ambitious and long term: Getting in touch with venus owners to provide a scheduling platform and also to make it possible to match organizers to pay them directly through our application.
+1. More ambitious and long term: Getting in touch with venues owners to provide a scheduling platform and also to make it possible to match organizers to pay them directly through our application.
 
 ## FAQ
 
@@ -21,8 +21,7 @@ A complete and detailed roadmap is not defined yet, but it will be some time soo
 
 1. Do you have a design for the interface, branding, etc?
 
-  Not yet. [Resultate](http://www.resultate.com.br), the company the main devs work for, is responsible for that. Branding material and visual identity is likely to be copyrighted since this is also an attempt at a product.
-
+  Not yet. Are you a designer and wish to contribute? Contact us!
 ## Developers
 
 Rolabola is built on Django, and there are a few dependencies. They are all listed in the `vagrant_provision.sh`. A `Vagrantfile` is also provided to make it easy to set up a dev environment.
