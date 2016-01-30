@@ -1,4 +1,5 @@
 from django.test import TestCase, Client
+from django.db.models import Count, When, F
 from django.test.utils import override_settings
 from django.contrib.auth.models import User
 from django.utils import timezone
@@ -98,7 +99,6 @@ class FriendshipTest(TestCase):
 
 
 class GroupTest(TestCase):
-
 
     def test_user_can_join_public_group(self):
         user_1 = PlayerFactory()
@@ -345,7 +345,29 @@ class GroupTest(TestCase):
         # Check if user 4 was not invited
         self.assertEqual(MatchInvitation.objects.filter(player__pk=user_4.id).count(),1)
 
+    def test_retrieve_friends_in_group(self):
+        user_1 = PlayerFactory()
+        user_2 = PlayerFactory()
+        user_3 = PlayerFactory()
+        user_4 = PlayerFactory()
 
+        group_1 = user_1.create_group("Group 1", public=True)
+
+        user_1.add_user(user_2)
+        user_1.add_user(user_3)
+        user_2.accept_request_from_friend(user_1)
+        user_3.accept_request_from_friend(user_1)
+
+        user_2.join_group(group_1)
+        user_3.join_group(group_1)
+        user_4.join_group(group_1)
+
+        friends = group_1.get_friends_from_user(user_1)
+
+        self.assertEqual(len(friends),2)
+        self.assertIn(user_2,friends)
+        self.assertIn(user_3,friends)
+        self.assertNotIn(user_4,friends)
 
 
 class RegistrationTest(TestCase):
@@ -411,6 +433,48 @@ class SearchTest(TestCase):
 
         self.assertContains(response,group_1.name)
         self.assertNotContains(response,group_2.name)
+
+    def test_search_must_be_ordered_by_number_of_friends(self):
+        user_1 = PlayerFactory()
+        user_2 = PlayerFactory()
+        user_3 = PlayerFactory()
+        user_4 = PlayerFactory()
+        user_5 = PlayerFactory()
+        user_6 = PlayerFactory()
+        user_7 = PlayerFactory()
+
+        group_1 = user_1.create_group("Group 1", public=True)
+        group_2 = user_1.create_group("Group 2", public=True)
+        group_3 = user_1.create_group("Group 3", public=True)
+        group_4 = user_4.create_group("Group 4", public=True)
+
+        user_1.add_user(user_2)
+        user_2.accept_request_from_friend(user_1)
+        user_1.add_user(user_3)
+        user_3.accept_request_from_friend(user_1)
+
+        user_2.join_group(group_2)
+        user_2.join_group(group_3)
+        user_3.join_group(group_2)
+        user_5.join_group(group_4)
+        user_6.join_group(group_4)
+        user_7.join_group(group_4)
+
+        results = Group.objects.filter(
+            Q(name__icontains="Group") &
+            Q(membership__member__in=[user_1.pk,user_2.pk])
+        )
+        # print(results)
+
+        # Search will be performed
+        results = Group.objects.filter(
+            Q(name__icontains="Group")
+        ).annotate(member_list_count=Count(Q(membership__member__in=([x.pk for x in user_1.friend_list.all()])),distinct=True)).order_by("-member_list_count")
+        # print(results)
+
+        self.assertEqual(results[0].pk,group_2.pk)
+        self.assertEqual(results[1].pk,group_3.pk)
+        self.assertEqual(results[2].pk,group_1.pk)
 
 class MatchTest(TestCase):
 
@@ -826,3 +890,83 @@ class MatchConfirmationTest(TestCase):
         self.assertEqual(user_2_invitation.status,MatchInvitation.CONFIRMED)
         user_3_invitation = MatchInvitation.objects.get(match__pk=new_match.pk,player__pk=self.user_3.pk)
         self.assertEqual(user_3_invitation.status,MatchInvitation.NOT_CONFIRMED)
+
+class MessageTest(TestCase):
+
+    def setUp(self):
+        self.user_1 = PlayerFactory()
+        self.user_2 = PlayerFactory()
+        self.user_3 = PlayerFactory()
+        self.user_4 = PlayerFactory()
+        self.group_1 = self.user_1.create_group("Group 1", public=True)
+        self.group_2 = self.user_1.create_group("Group 2", public=False)
+        self.user_2.join_group(self.group_1)
+        self.user_2.join_group(self.group_2)
+        self.user_1.accept_request_group(group=self.group_2,user=self.user_2)
+        self.user_3.join_group(self.group_1)
+        self.user_3.join_group(self.group_2)
+
+        # Message sending
+        self.user_1.send_message_group(group=self.group_1,message="test message 1")
+        self.user_2.send_message_group(group=self.group_1,message="test message 2")
+        self.user_3.send_message_group(group=self.group_1,message="test message 3")
+        self.user_1.send_message_group(group=self.group_2,message="test message 1")
+        self.user_2.send_message_group(group=self.group_2,message="test message 2")
+        self.user_3.send_message_group(group=self.group_2,message="test message 3")
+
+    def test_user_can_send_message(self):
+
+        messages_in_group_1 = self.group_1.get_messages()
+        self.assertEqual(len(messages_in_group_1),3)
+        self.assertEqual(messages_in_group_1[0].message,"test message 3")
+        self.assertEqual(messages_in_group_1[1].message,"test message 2")
+        self.assertEqual(messages_in_group_1[2].message,"test message 1")
+
+        messages_in_group_2 = self.group_2.get_messages()
+        self.assertEqual(len(messages_in_group_2),2)
+        self.assertEqual(messages_in_group_2[0].message,"test message 2")
+        self.assertEqual(messages_in_group_2[1].message,"test message 1")
+
+    def test_message_deletion_user(self):
+        messages_in_group_1 = self.group_1.get_messages()
+        c = Client()
+
+        c.post("/login/",{"username":self.user_3.user.email,"password":"123456","form":"login_form"})
+        response = c.post("/message/%d/delete" % messages_in_group_1[0].pk,{},HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(response.status_code,200)
+
+        messages_in_group_1 = self.group_1.get_messages()
+        self.assertEqual(len(messages_in_group_1),2)
+
+        response = c.post("/message/%d/delete" % messages_in_group_1[0].pk,{},HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(response.status_code,403)
+
+        messages_in_group_1 = self.group_1.get_messages()
+        self.assertEqual(len(messages_in_group_1),2)
+
+        messages_in_group_2 = self.group_2.get_messages()
+        response = c.post("/message/%d/delete" % messages_in_group_1[0].pk,{},HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(response.status_code,403)
+
+    def test_message_deletion_admin(self):
+        messages_in_group_1 = self.group_1.get_messages()
+        c = Client()
+
+        c.post("/login/",{"username":self.user_1.user.email,"password":"123456","form":"login_form"})
+        response = c.post("/message/%d/delete" % messages_in_group_1[0].pk,{},HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(response.status_code,200)
+
+        messages_in_group_1 = self.group_1.get_messages()
+        self.assertEqual(len(messages_in_group_1),2)
+
+        response = c.post("/message/%d/delete" % messages_in_group_1[0].pk,{},HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(response.status_code,200)
+
+        messages_in_group_1 = self.group_1.get_messages()
+        self.assertEqual(len(messages_in_group_1),1)
+
+        messages_in_group_2 = self.group_2.get_messages()
+        response = c.post("/message/%d/delete" % messages_in_group_2[0].pk,{},HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(response.status_code,200)
+        messages_in_group_2 = self.group_2.get_messages()
+        self.assertEqual(len(messages_in_group_2),1)

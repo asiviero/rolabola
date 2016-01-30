@@ -31,6 +31,8 @@ urlpatterns = [
     url(r'^calendar/update-weekly/$', views.calendar_update_weekly, name="calendar-update-weekly"),
     url(r'^calendar/update-monthly/$', views.calendar_update_monthly, name="calendar-update-monthly"),
     url(r'^venue/(\d+)/$', views.venue, name="venue"),
-    url(r'^venue/create$', views.venue_create, name="venue-create")
+    url(r'^venue/create$', views.venue_create, name="venue-create"),
+    url(r'^group/(\d+)/message/send$', views.message_send, name="message-send"),
+    url(r'^message/(\d+)/delete$', views.message_delete, name="message-delete")
 
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT) + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

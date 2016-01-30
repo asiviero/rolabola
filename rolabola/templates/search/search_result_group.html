@@ -1,0 +1,20 @@
+<div class="img-wrapper col s3">
+  <img class="group-icon responsive-img circle" src="{{ group.fetch_picture }}" />
+</div>
+<div class="group-info-wrapper col s9">
+  <a href="{% url 'Group' group.id %}" class="group-name">{{ group.name }}</a>
+  {% if not group.public %}
+    <button class="btn btn-small disabled">PRIVATE</button>
+  {% endif %}
+  <div class="friends-in-group-wrapper">
+    {% for friend in friends_in_group %}
+      <img class="friend circle" src="{{ friend.fetch_picture }}" />
+    {% endfor %}
+  </div>  
+  {% if not member %}
+  <a class="btn-floating {{ membership_requested|yesno:'disabled,blue' }} btn-small btn-join-group"
+      data-url="{% url 'group-join' group.pk %}">
+    <i class="material-icons">group add</i>
+  </a>
+  {% endif %}
+</div>
