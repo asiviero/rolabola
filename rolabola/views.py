@@ -387,7 +387,6 @@ def group_match_accept(request,group,match):
     else:
         player = request.user.player
 
-    print(player.pk)
     player.accept_match_invitation(match=match)
     match_invitation_template = loader.get_template("match_invitation_calendar.html")
 
@@ -395,6 +394,7 @@ def group_match_accept(request,group,match):
     context = {
         "group":group,
         "match": match,
+        "user_is_admin":request.user.player in group.member_list.filter(membership__role=Membership.GROUP_ADMIN),
     }
 
     if request.user.player in match.get_unanswered_list():
@@ -433,6 +433,7 @@ def group_match_reject(request,group,match):
     context = {
         "group":group,
         "match": match,
+        "user_is_admin":request.user.player in group.member_list.filter(membership__role=Membership.GROUP_ADMIN),
     }
 
     if request.user.player in match.get_unanswered_list():
