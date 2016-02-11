@@ -1,6 +1,22 @@
 {% extends "baserb.html" %}
 {% block side_pane_block %}
-&nbsp;
+  <table>
+    <thead>
+      <th>
+        <td>{{ match.date|date:"F" }}</td>
+      </th>
+    </thead>
+    <tbody>
+      <tr>
+        <td>{{ match.date|date:"d" }}</td>
+      </tr>
+    </tbody>
+    <tfoot>
+      <tr>
+        <td>{{ match.date|date:"H:i" }}</td>
+      </tr>
+    </tfoot>
+  </table>
 {% endblock %}
 {% block main_content_block %}
   <div class="confirmed-list-wrapper">
