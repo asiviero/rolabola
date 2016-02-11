@@ -475,7 +475,7 @@ class MatchInvitation(models.Model):
         self.save()
 
     def revert_confirmation(self):
-        self.status = self.NOT_CONFIRMED if self.status == self.CONFIRMED else self.CONFIRMED
+        self.status = self.NOT_CONFIRMED if self.status in (self.CONFIRMED,self.ABSENCE_CONFIRMED) else self.CONFIRMED
         self.save()
 
 
