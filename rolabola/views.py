@@ -344,6 +344,7 @@ def group_match_create(request,group):
                 max_participants=group_match_create_form.cleaned_data["max_participants"],
                 min_participants=group_match_create_form.cleaned_data["min_participants"],
                 price=group_match_create_form.cleaned_data["price"],
+                venue=group_match_create_form.cleaned_data["venue"],
                 until=until
             )
             return redirect(reverse("group-match", args=(match.group.id,match.id,)))
@@ -353,12 +354,12 @@ def group_match_create(request,group):
 
 @login_required
 def group_match(request,group,match):
-    group=get_object_or_404(Group,pk=group)
-    match=get_object_or_404(Match,pk=match)
+    group = get_object_or_404(Group,pk=group)
+    match = get_object_or_404(Match,pk=match)
     context = {
-        "group":group,
-        "match": match,
-        "user_is_admin":request.user.player in group.member_list.filter(membership__role=Membership.GROUP_ADMIN),
+        "group" : group,
+        "match" : match,
+        "user_is_admin" : request.user.player in group.member_list.filter(membership__role=Membership.GROUP_ADMIN),
     }
 
     if request.user.player in match.get_unanswered_list():

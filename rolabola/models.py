@@ -155,7 +155,7 @@ class Player(models.Model):
             group__pk__in=group_list
         )
 
-    def schedule_match(self,group,date,max_participants,min_participants,price,until=None):
+    def schedule_match(self,group,date,max_participants,min_participants,price,venue,until=None):
         if not until is None:
             base_date = date + datetime.timedelta(days=7)
             while base_date < until:
@@ -165,6 +165,7 @@ class Player(models.Model):
                     date={"year":base_date.year,"month":base_date.month,"day":base_date.day},
                     max_participants=max_participants,
                     min_participants=min_participants,
+                    venue=venue,
                     price=str(price)
                 )
                 base_date += datetime.timedelta(days=7)
@@ -174,6 +175,7 @@ class Player(models.Model):
                 date=date,
                 max_participants=max_participants,
                 min_participants=min_participants,
+                venue=venue,
                 price=price
             )
 
