@@ -763,12 +763,12 @@ class MatchTest(StaticLiveServerTestCase):
         self.assertRegexpMatches(redirected_url, "match/\d+/")
 
         # Check if an acceptance box is present
-        buttons = self.browser.find_element_by_id("accept-wrapper").find_elements_by_tag_name("button")
+        buttons = self.browser.find_element_by_class_name("confirmed-list").find_element_by_class_name("header").find_element_by_class_name("confirm-container").find_elements_by_tag_name("a")
         self.assertEqual(len(buttons),2)
 
         # Check if buttons are with the right labels
-        self.assertEqual(buttons[0].text,"Yes")
-        self.assertEqual(buttons[1].text,"No")
+        self.assertEqual(buttons[0].find_element_by_tag_name("i").text,"done")
+        self.assertEqual(buttons[1].find_element_by_tag_name("i").text,"clear")
 
         # Return to the home page, then check if the schedule box is present and repeat button tests
         self.browser.get(self.live_server_url)
@@ -1004,25 +1004,30 @@ class CalendarTest(StaticLiveServerTestCase):
         self.group_private = self.user_1.create_group("Private Group",public = False)
         self.user_2.join_group(self.group_public)
 
+        self.venue_1 = VenueFactory()
+
         self.user_1.schedule_match(self.group_public,
                                             date=timezone.make_aware(datetime.datetime.today()),
                                             max_participants=15,
                                             min_participants=10,
-                                            price=Decimal("20.0")
+                                            price=Decimal("20.0"),
+                                            venue=self.venue_1
         )
 
         self.user_1.schedule_match(self.group_public,
                                             date=timezone.make_aware(datetime.datetime.today() + datetime.timedelta(days=7)),
                                             max_participants=15,
                                             min_participants=10,
-                                            price=Decimal("20.0")
+                                            price=Decimal("20.0"),
+                                            venue=self.venue_1
         )
 
         self.user_1.schedule_match(self.group_private,
                                             date=timezone.make_aware(datetime.datetime.today()),
                                             max_participants=15,
                                             min_participants=10,
-                                            price=Decimal("20.0")
+                                            price=Decimal("20.0"),
+                                            venue=self.venue_1
         )
 
     def tearDown(self):
@@ -1232,6 +1237,8 @@ class MatchConfirmationTest(StaticLiveServerTestCase):
         self.user_2.user.set_password("123456")
         self.user_2.user.save()
 
+        self.venue_1 = VenueFactory()
+
         last_sunday = datetime.datetime.today()+dateutil.relativedelta.relativedelta(weekday=dateutil.relativedelta.SU(-1))
 
         # Create groups
@@ -1243,35 +1250,40 @@ class MatchConfirmationTest(StaticLiveServerTestCase):
                                             date=timezone.make_aware(last_sunday),
                                             max_participants=15,
                                             min_participants=10,
-                                            price=Decimal("20.0")
+                                            price=Decimal("20.0"),
+                                            venue=self.venue_1
         )
 
         self.match_monday = self.user_1.schedule_match(self.group_public,
                                             date=timezone.make_aware(last_sunday + datetime.timedelta(days=1)),
                                             max_participants=15,
                                             min_participants=10,
-                                            price=Decimal("20.0")
+                                            price=Decimal("20.0"),
+                                            venue=self.venue_1
         )
 
         self.match_tuesday = self.user_1.schedule_match(self.group_public,
                                             date=timezone.make_aware(last_sunday + datetime.timedelta(days=2)),
                                             max_participants=15,
                                             min_participants=10,
-                                            price=Decimal("20.0")
+                                            price=Decimal("20.0"),
+                                            venue=self.venue_1
         )
 
         self.match_wednesday = self.user_1.schedule_match(self.group_public,
                                             date=timezone.make_aware(last_sunday + datetime.timedelta(days=3)),
                                             max_participants=15,
                                             min_participants=10,
-                                            price=Decimal("20.0")
+                                            price=Decimal("20.0"),
+                                            venue=self.venue_1
         )
 
         self.match_thursday = self.user_1.schedule_match(self.group_public,
                                             date=timezone.make_aware(last_sunday + datetime.timedelta(days=4)),
                                             max_participants=0,
                                             min_participants=0,
-                                            price=Decimal("20.0")
+                                            price=Decimal("20.0"),
+                                            venue=self.venue_1
         )
 
         self.user_2.accept_match_invitation(match=self.match_sunday)
