@@ -82,7 +82,9 @@ class Player(models.Model):
         return settings.MEDIA_URL + str(self.picture)
 
     def __str__(self):
-        return u"%s %s (%s)" % (self.user.first_name,self.user.last_name,self.nickname)
+        name = u"%s %s" % (self.user.first_name,self.user.last_name)
+        name = u"%s (%s)" % (name,self.nickname) if len(self.nickname) else name
+        return name
 
     def add_user(self,friend,message=""):
 
@@ -155,17 +157,18 @@ class Player(models.Model):
             group__pk__in=group_list
         )
 
-    def schedule_match(self,group,date,max_participants,min_participants,price,until=None):
+    def schedule_match(self,group,date,max_participants,min_participants,price,venue,until=None):
         if not until is None:
             base_date = date + datetime.timedelta(days=7)
-            while base_date < until:
+            while base_date <= until:
                 schedule_match_task.delay(
                     player=self.pk,
                     group=group.pk,
                     date={"year":base_date.year,"month":base_date.month,"day":base_date.day},
                     max_participants=max_participants,
                     min_participants=min_participants,
-                    price=str(price)
+                    price=str(price),
+                    venue=venue.pk
                 )
                 base_date += datetime.timedelta(days=7)
         if Membership.objects.filter(member__pk=self.id,group__pk=group.pk,role=Membership.GROUP_ADMIN).count():
@@ -174,7 +177,8 @@ class Player(models.Model):
                 date=date,
                 max_participants=max_participants,
                 min_participants=min_participants,
-                price=price
+                price=price,
+                venue=venue
             )
 
     def get_match_invitations(self,start_date=None,end_date=None,group=None):
@@ -301,13 +305,14 @@ class Group(models.Model):
         return self.member_list.filter(membership__member__in=player.friend_list.all())
 
 @task(name="schedule_match_task")
-def schedule_match_task(player,group,date,max_participants,min_participants,price):
+def schedule_match_task(player,group,date,max_participants,min_participants,price,venue):
     try:
         logger.info("Scheduling...")
         player = Player.objects.get(pk=player)
         group = Group.objects.get(pk=group)
+        venue = Venue.objects.get(pk=venue)
         date = timezone.make_aware(datetime.datetime(date.get("year"),date.get("month"),date.get("day")))
-        player.schedule_match(group,date,max_participants,min_participants,price)
+        player.schedule_match(group,date,max_participants,min_participants,price,venue)
     except Player.DoesNotExist:
         pass
     except Group.DoesNotExist:
@@ -470,7 +475,7 @@ class MatchInvitation(models.Model):
         self.save()
 
     def revert_confirmation(self):
-        self.status = self.NOT_CONFIRMED if self.status == self.CONFIRMED else self.CONFIRMED
+        self.status = self.NOT_CONFIRMED if self.status in (self.CONFIRMED,self.ABSENCE_CONFIRMED) else self.CONFIRMED
         self.save()
 
 

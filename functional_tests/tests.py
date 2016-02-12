@@ -763,12 +763,12 @@ class MatchTest(StaticLiveServerTestCase):
         self.assertRegexpMatches(redirected_url, "match/\d+/")
 
         # Check if an acceptance box is present
-        buttons = self.browser.find_element_by_id("accept-wrapper").find_elements_by_tag_name("button")
+        buttons = self.browser.find_element_by_class_name("confirmed-list").find_element_by_class_name("header").find_element_by_class_name("confirm-container").find_elements_by_tag_name("a")
         self.assertEqual(len(buttons),2)
 
         # Check if buttons are with the right labels
-        self.assertEqual(buttons[0].text,"Yes")
-        self.assertEqual(buttons[1].text,"No")
+        self.assertEqual(buttons[0].find_element_by_tag_name("i").text,"done")
+        self.assertEqual(buttons[1].find_element_by_tag_name("i").text,"clear")
 
         # Return to the home page, then check if the schedule box is present and repeat button tests
         self.browser.get(self.live_server_url)
@@ -1004,25 +1004,30 @@ class CalendarTest(StaticLiveServerTestCase):
         self.group_private = self.user_1.create_group("Private Group",public = False)
         self.user_2.join_group(self.group_public)
 
+        self.venue_1 = VenueFactory()
+
         self.user_1.schedule_match(self.group_public,
                                             date=timezone.make_aware(datetime.datetime.today()),
                                             max_participants=15,
                                             min_participants=10,
-                                            price=Decimal("20.0")
+                                            price=Decimal("20.0"),
+                                            venue=self.venue_1
         )
 
         self.user_1.schedule_match(self.group_public,
                                             date=timezone.make_aware(datetime.datetime.today() + datetime.timedelta(days=7)),
                                             max_participants=15,
                                             min_participants=10,
-                                            price=Decimal("20.0")
+                                            price=Decimal("20.0"),
+                                            venue=self.venue_1
         )
 
         self.user_1.schedule_match(self.group_private,
                                             date=timezone.make_aware(datetime.datetime.today()),
                                             max_participants=15,
                                             min_participants=10,
-                                            price=Decimal("20.0")
+                                            price=Decimal("20.0"),
+                                            venue=self.venue_1
         )
 
     def tearDown(self):
@@ -1232,6 +1237,8 @@ class MatchConfirmationTest(StaticLiveServerTestCase):
         self.user_2.user.set_password("123456")
         self.user_2.user.save()
 
+        self.venue_1 = VenueFactory()
+
         last_sunday = datetime.datetime.today()+dateutil.relativedelta.relativedelta(weekday=dateutil.relativedelta.SU(-1))
 
         # Create groups
@@ -1243,35 +1250,40 @@ class MatchConfirmationTest(StaticLiveServerTestCase):
                                             date=timezone.make_aware(last_sunday),
                                             max_participants=15,
                                             min_participants=10,
-                                            price=Decimal("20.0")
+                                            price=Decimal("20.0"),
+                                            venue=self.venue_1
         )
 
         self.match_monday = self.user_1.schedule_match(self.group_public,
                                             date=timezone.make_aware(last_sunday + datetime.timedelta(days=1)),
                                             max_participants=15,
                                             min_participants=10,
-                                            price=Decimal("20.0")
+                                            price=Decimal("20.0"),
+                                            venue=self.venue_1
         )
 
         self.match_tuesday = self.user_1.schedule_match(self.group_public,
                                             date=timezone.make_aware(last_sunday + datetime.timedelta(days=2)),
                                             max_participants=15,
                                             min_participants=10,
-                                            price=Decimal("20.0")
+                                            price=Decimal("20.0"),
+                                            venue=self.venue_1
         )
 
         self.match_wednesday = self.user_1.schedule_match(self.group_public,
                                             date=timezone.make_aware(last_sunday + datetime.timedelta(days=3)),
                                             max_participants=15,
                                             min_participants=10,
-                                            price=Decimal("20.0")
+                                            price=Decimal("20.0"),
+                                            venue=self.venue_1
         )
 
         self.match_thursday = self.user_1.schedule_match(self.group_public,
                                             date=timezone.make_aware(last_sunday + datetime.timedelta(days=4)),
                                             max_participants=0,
                                             min_participants=0,
-                                            price=Decimal("20.0")
+                                            price=Decimal("20.0"),
+                                            venue=self.venue_1
         )
 
         self.user_2.accept_match_invitation(match=self.match_sunday)
@@ -1394,6 +1406,7 @@ class MatchConfirmationTest(StaticLiveServerTestCase):
         self.assertNotIn(str(self.user_2),confirmed_list.text)
         self.assertIn(str(self.user_2)," ".join([x.text for x in disabled_list]))
 
+
     def test_match_confirmation_in_match_page(self):
         self.browser.get(self.live_server_url)
 
@@ -1487,114 +1500,142 @@ class MatchConfirmationTest(StaticLiveServerTestCase):
         self.assertEqual(len(buttons),1)
         self.assertIn("NOT GOING",buttons[0].text)
 
-    """def test_user_can_set_automatic_confirmation_in_group(self):
+    def test_admin_match_confirmation(self):
         self.browser.get(self.live_server_url)
-
-        form_login = self.browser.find_element_by_id('form_login')
-        form_login.find_element_by_id("id_username").send_keys(self.user_2.user.username)
-        form_login.find_element_by_id("id_password").send_keys("123456")
-        form_login.find_element_by_css_selector("input[type='submit']").click()
-
-        print(self.group_public.id)
-        self.browser.get("%s/group/%d/" % (self.live_server_url,self.group_public.id))
-        time.sleep(2)
-        self.browser.find_element_by_class_name("automatic-confirmation-wrapper").find_element_by_tag_name("label").click()
-        time.sleep(2)
-        self.browser.quit()
-        self.browser = webdriver.Firefox()
-        self.browser.implicitly_wait(1.5)
-        self.browser.get(self.live_server_url)
-
-        form_login = self.browser.find_element_by_id('form_login')
-        form_login.find_element_by_id("id_username").send_keys(self.user_2.user.username)
-        form_login.find_element_by_id("id_password").send_keys("123456")
-        form_login.find_element_by_css_selector("input[type='submit']").click()
-
-        self.browser.get("%s/group/%d/" % (self.live_server_url,self.group_public.id))
-        time.sleep(5)
-
-        checkbox = self.browser.find_element_by_class_name("automatic-confirmation-wrapper").find_element_by_tag_name("input")
-        self.assertEqual(checkbox.is_selected(),True)
-
-        self.browser.get(self.live_server_url)
-        self.browser.find_element_by_link_text("Logout").click()
-
         form_login = self.browser.find_element_by_id('form_login')
         form_login.find_element_by_id("id_username").send_keys(self.user_1.user.username)
         form_login.find_element_by_id("id_password").send_keys("123456")
         form_login.find_element_by_css_selector("input[type='submit']").click()
 
-        self.browser.get("%s/group/%d/" % (self.live_server_url,self.group_public.id))
-        self.browser.find_element_by_link_text("New Match").click()
-
-        # User fills the form with data on date, price, max and min people
-        form_match = self.browser.find_element_by_id("form-group-match-creation")
-        form_match.find_element_by_id("id_date").send_keys(datetime.date.today().strftime("%d/%m/%Y"))
-        form_match.find_element_by_id("id_price").send_keys("10")
-        form_match.find_element_by_id("id_min_participants").send_keys("10")
-        form_match.find_element_by_id("id_max_participants").send_keys("15")
-
-        form_match.find_element_by_css_selector("input[type='submit']").click()
-
+        self.browser.get("%s/group/%d/match/%d" % (self.live_server_url,self.group_public.id,self.match_tuesday.pk))
+        time.sleep(3)
         confirmed_list = self.browser.find_element_by_class_name("confirmed-list")
-        self.assertIn(str(self.user_2),confirmed_list.text)
+        not_confirmed_list = self.browser.find_element_by_class_name("not-confirmed-list")
+        disabled_list = not_confirmed_list.find_elements_by_class_name("disabled")
+        self.assertIn(str(self.user_1),confirmed_list.text)
+        self.assertIn(str(self.user_2),not_confirmed_list.text)
 
-    def test_admin_can_confirm_presence_of_any_user(self):
+        confirmed_first = confirmed_list.find_elements_by_tag_name("li")[0]
+
+        # Admin confirms his presence
+        button_container = confirmed_first.find_element_by_class_name("confirm-container")
+        links = button_container.find_elements_by_tag_name("a")
+        self.assertEqual(len(links),2)
+
+        links[0].click()
+        time.sleep(3)
+
+        # Refresh lists
+        confirmed_list = self.browser.find_element_by_class_name("confirmed-list")
+        not_confirmed_list = self.browser.find_element_by_class_name("not-confirmed-list")
+        disabled_list = not_confirmed_list.find_elements_by_class_name("disabled")
+
+        # Check user has no more buttons
+        confirmed_first = confirmed_list.find_elements_by_tag_name("li")[0]
+        button_container = confirmed_first.find_elements_by_class_name("confirm-container")
+        self.assertEqual(len(button_container),0)
+
+        # Check non-confirmed remained with the buttons
+        for row in not_confirmed_list.find_elements_by_tag_name("li"):
+            button_container = row.find_element_by_class_name("confirm-container")
+            links = button_container.find_elements_by_tag_name("a")
+            self.assertEqual(len(links),2)
+
+    def test_match_confirmation_revertion_on_match_page(self):
+        # User logs in
         self.browser.get(self.live_server_url)
 
         form_login = self.browser.find_element_by_id('form_login')
-        form_login.find_element_by_id("id_username").send_keys(self.user_1.user.username)
+        form_login.find_element_by_id("id_username").send_keys(self.user_2.user.username)
         form_login.find_element_by_id("id_password").send_keys("123456")
         form_login.find_element_by_css_selector("input[type='submit']").click()
 
-        self.browser.get("%s/group/%d/" % (self.live_server_url,self.group_public.id))
-        self.browser.find_element_by_link_text("New Match").click()
+        self.browser.get("%s/group/%d/match/%d" % (self.live_server_url,self.group_public.id,self.match_tuesday.pk))
+        time.sleep(3)
 
-        # User fills the form with data on date, price, max and min people
-        form_match = self.browser.find_element_by_id("form-group-match-creation")
-        form_match.find_element_by_id("id_date").send_keys(datetime.date.today().strftime("%d/%m/%Y"))
-        form_match.find_element_by_id("id_price").send_keys("10")
-        form_match.find_element_by_id("id_min_participants").send_keys("10")
-        form_match.find_element_by_id("id_max_participants").send_keys("15")
+        # User accepts invitation to match 1
+        confirmed_list = self.browser.find_element_by_class_name("confirmed-list")
+        confirmed_first = confirmed_list.find_elements_by_tag_name("li")[0]
+        button_container = confirmed_first.find_element_by_class_name("confirm-container")
 
-        form_match.find_element_by_css_selector("input[type='submit']").click()
-        not_confirmed_list = self.browser.find_element_by_class_name("not-confirmed-list").find_elements_by_tag_name("li")
-        for row in not_confirmed_list:
-            if str(self.user_2) in row.text:
-                links = row.find_elements_by_tag_name("a")
-                self.assertEqual(len(links),2)
+        links = button_container.find_elements_by_tag_name("a")
+        links[0].click()
+        time.sleep(3)
 
-                # Check if buttons are with the right labels
-                self.assertEqual(links[0].find_element_by_tag_name("i").text,"done")
-                self.assertEqual(links[1].find_element_by_tag_name("i").text,"clear")
+        # User sees his name in the confirmed list, along a button to cancel his confirmation
+        # On the other users, he sees no button
+        confirmed_list_li = self.browser.find_element_by_class_name("confirmed-list").find_elements_by_tag_name("li")
+        refused_list_li = self.browser.find_element_by_class_name("not-confirmed-list").find_elements_by_class_name("disabled")
 
-                links[0].click()
-        time.sleep(1)
-        confirmed_list = self.browser.find_elements_by_css_selector("li:not(.header)")
-        self.assertNotIn(str(self.user_1),"".join([x.text for x in confirmed_list]))
-        self.assertIn(str(self.user_2),"".join([x.text for x in confirmed_list]))
-        for row in confirmed_list:
-            if str(self.user_2) in row.text:
-                links = row.find_elements_by_tag_name("a")
-                self.assertEqual(len(links),0)
-        not_confirmed_list = self.browser.find_element_by_class_name("not-confirmed-list").find_elements_by_tag_name("li")
-        header = self.browser.find_element_by_css_selector("li.header")
-        self.assertIn(str(self.user_1),header.text)
-        self.assertNotIn(str(self.user_2),"".join([x.text for x in not_confirmed_list]))
+        for confirmed in confirmed_list_li:
+            buttons = confirmed.find_element_by_class_name("revert-container")
+            if str(self.user_2) in confirmed.text:
+                links = buttons.find_elements_by_tag_name("a")
+                self.assertEqual(len(links),1)
+                self.assertEqual(links[0].text,"CANCEL")
+            else:
+                self.assertEqual(len(buttons),0)
 
-        # Refresh the page to see if nothing changed
-        self.browser.refresh()
-        confirmed_list = self.browser.find_elements_by_css_selector("li:not(.header)")
-        self.assertNotIn(str(self.user_1),"".join([x.text for x in confirmed_list]))
-        self.assertIn(str(self.user_2),"".join([x.text for x in confirmed_list]))
-        for row in confirmed_list:
-            if str(self.user_2) in row.text:
-                links = row.find_elements_by_tag_name("a")
-                self.assertEqual(len(links),0)
-        not_confirmed_list = self.browser.find_element_by_class_name("not-confirmed-list").find_elements_by_tag_name("li")
-        header = self.browser.find_element_by_css_selector("li.header")
-        self.assertIn(str(self.user_1),header.text)
-        self.assertNotIn(str(self.user_2),"".join([x.text for x in not_confirmed_list]))"""
+        for refused in refused_list_li:
+            buttons = confirmed.find_elements_by_class_name("revert-container")
+            self.assertEqual(len(buttons),0)
+
+        # User clicks the button to revert his confirmation
+        for confirmed in confirmed_list_li:
+            buttons = confirmed.find_elements_by_class_name("revert-container")
+            if str(self.user_2) in confirmed.text:
+                buttons[0].find_elements_by_tag_name("a")[0].click()
+                time.sleep(3)
+
+        # User sees his name on the top of the list again, without revertion button
+        confirmed_list = self.browser.find_element_by_class_name("confirmed-list")
+        confirmed_first = confirmed_list.find_elements_by_tag_name("li")[0]
+        self.assertIn(str(self.user_2),confirmed_first.text)
+        buttons = confirmed_first.find_elements_by_class_name("revert-container")
+        self.assertEqual(len(buttons),0)
+
+        # User refuses invitation to match 2
+        self.browser.get("%s/group/%d/match/%d" % (self.live_server_url,self.group_public.id,self.match_wednesday.pk))
+        time.sleep(3)
+
+        # User accepts invitation to match 1
+        confirmed_list = self.browser.find_element_by_class_name("confirmed-list")
+        confirmed_first = confirmed_list.find_elements_by_tag_name("li")[0]
+        button_container = confirmed_first.find_element_by_class_name("confirm-container")
+
+        links = button_container.find_elements_by_tag_name("a")
+        links[1].click()
+        time.sleep(3)
+
+        # User sees his name in the not-confirmed list, along a button to cancel his confirmation
+        # On the other users, he sees no button
+        confirmed_list_li = self.browser.find_element_by_class_name("confirmed-list").find_elements_by_tag_name("li")
+        refused_list_li = self.browser.find_element_by_class_name("not-confirmed-list").find_elements_by_class_name("disabled")
+
+        for confirmed in confirmed_list_li:
+            buttons = confirmed.find_elements_by_class_name("revert-container")
+            self.assertEqual(len(buttons),0)
+
+        for refused in refused_list_li:
+            buttons = refused.find_elements_by_class_name("revert-container")
+            if str(self.user_2) in refused.text:
+                self.assertEqual(len(buttons[0].find_elements_by_tag_name("a")),1)
+            else:
+                self.assertEqual(len(buttons),0)
+
+        # User clicks the button
+        for refused in refused_list_li:
+            buttons = refused.find_elements_by_class_name("revert-container")
+            if str(self.user_2) in refused.text:
+                buttons[0].find_elements_by_tag_name("a")[0].click()
+                time.sleep(3)
+
+        # User sees his name on the top of the list again, without revertion button
+        confirmed_list = self.browser.find_element_by_class_name("confirmed-list")
+        confirmed_first = confirmed_list.find_elements_by_tag_name("li")[0]
+        self.assertIn(str(self.user_2),confirmed_first.text)
+        buttons = confirmed_first.find_elements_by_class_name("revert-container")
+        self.assertEqual(len(buttons),0)
 
 class VenueTest(StaticLiveServerTestCase):
 
