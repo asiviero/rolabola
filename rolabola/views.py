@@ -210,7 +210,7 @@ def group(request,group):
         automatic_confirmation = Membership.objects.get(member__pk=request.user.player.id,group__pk=group.pk).automatic_confirmation
     except:
         automatic_confirmation = False
-    #days = [datetime.date(2001, 1, i).strftime('%a') for i in range(1,8)]
+    #days = [datetime.datetime(2001, 1, i).strftime('%a') for i in range(1,8)]
 
 
     today = datetime.date.today()

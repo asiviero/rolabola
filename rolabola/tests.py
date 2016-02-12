@@ -479,6 +479,7 @@ class SearchTest(TestCase):
         self.assertEqual(results[1].pk,group_3.pk)
         self.assertEqual(results[2].pk,group_1.pk)
 
+
 class MatchTest(TestCase):
 
     @override_settings(CELERY_ALWAYS_EAGER=True)
@@ -745,6 +746,7 @@ class CalendarTest(TestCase):
 
         self.assertEqual(response.status_code,403)
 
+
 @override_settings(CELERY_ALWAYS_EAGER=True)
 class MatchConfirmationTest(TestCase):
 
@@ -897,7 +899,7 @@ class MatchConfirmationTest(TestCase):
         self.user_2.revert_match_invitation(match=self.match)
         user_2_invitation = MatchInvitation.objects.get(match__pk=self.match.pk,player__pk=self.user_2.pk)
         self.assertEqual(user_2_invitation.status,MatchInvitation.NOT_CONFIRMED)
-        
+
 
     def test_user_cant_revert_other_user_status(self):
         self.user_2.accept_match_invitation(match=self.match)
@@ -960,7 +962,6 @@ class MessageTest(TestCase):
         self.user_3.send_message_group(group=self.group_2,message="test message 3")
 
     def test_user_can_send_message(self):
-
         messages_in_group_1 = self.group_1.get_messages()
         self.assertEqual(len(messages_in_group_1),3)
         self.assertEqual(messages_in_group_1[0].message,"test message 3")
