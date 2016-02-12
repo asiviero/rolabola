@@ -30,7 +30,7 @@
     <ul>
       {% for member in group.member_list.all %}
         <li>
-          {{ member.user.first_name }}  {{ member.user.last_name }} ({{ member.nickname }})
+          {{ member.user }}
         </li>
       {% endfor %}
     </ul>
