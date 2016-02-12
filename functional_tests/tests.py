@@ -860,9 +860,11 @@ class MatchTest(StaticLiveServerTestCase):
         buttons_match_create = self.browser.find_elements_by_class_name("btn-match-create")
         self.assertEqual(len(buttons_match_create),2)
 
+        time.sleep(3)
+
         buttons_match_create[0].click()
 
-        time.sleep(1)
+        time.sleep(3)
 
         form_match = self.browser.find_element_by_id("form-group-match-creation")
         form_match.find_element_by_id("id_date").send_keys(datetime.datetime.now().strftime("%d/%m/%Y %H:%M"))
@@ -964,9 +966,11 @@ class MatchTest(StaticLiveServerTestCase):
         buttons_match_create = self.browser.find_elements_by_class_name("btn-match-create")
         self.assertEqual(len(buttons_match_create),2)
 
+        time.sleep(3)
+
         buttons_match_create[0].click()
 
-        time.sleep(1)
+        time.sleep(3)
 
         form_match = self.browser.find_element_by_id("form-group-match-creation")
         form_match.find_element_by_id("id_date").send_keys(datetime.date.today().strftime("%d/%m/%Y %H:%M"))
@@ -1906,7 +1910,7 @@ class MessageTest(StaticLiveServerTestCase):
         # User clicks the delete button
         messages[1].find_element_by_class_name("btn-delete-message").click()
 
-        time.sleep(3)
+        time.sleep(10)
 
         # Message disappears
         messages = message_wall.find_elements_by_class_name("message-wrapper")
@@ -1951,7 +1955,7 @@ class MessageTest(StaticLiveServerTestCase):
         # User clicks the delete button
         messages[1].find_element_by_class_name("btn-delete-message").click()
 
-        time.sleep(3)
+        time.sleep(10)
 
         # Message disappears
         messages = message_wall.find_elements_by_class_name("message-wrapper")
