@@ -1,82 +1,64 @@
 {% load l10n %}
-<div class="row">
-  <div class="col m8">
-    <div class="confirmed-list">
-      <ul>
-        {% if header %}
-          <li class="header">
-            {{ header }}
-            <div class="confirm-container">
-              <a class="btn btn-floating btn-tiny green btn-accept-invitation" data-url="{% url "group-match-accept" group.pk match.pk %}">
-                <i class="material-icons">done</i>
-              </a>
-              <a class="btn btn-floating btn-tiny red btn-refuse-invitation" data-url="{% url "group-match-reject" group.pk match.pk %}">
-                <i class="material-icons">clear</i>
-              </a>
-            </div>
-          </li>
+<div class="confirmed-list">
+  <ul>
+    {% if header %}
+      <li class="header">
+        {{ header }}
+        <div class="confirm-container">
+          <a class="btn btn-floating btn-tiny green btn-accept-invitation" data-url="{% url "group-match-accept" group.pk match.pk %}">
+            <i class="material-icons">done</i>
+          </a>
+          <a class="btn btn-floating btn-tiny red btn-refuse-invitation" data-url="{% url "group-match-reject" group.pk match.pk %}">
+            <i class="material-icons">clear</i>
+          </a>
+        </div>
+      </li>
+    {% endif %}
+  </ul>
+  <h3>Confirmed ({{ match.get_confirmed_list|length }})</h3>
+  <ul>
+    {% for confirmed_player in match.get_confirmed_list %}
+      <li>
+        {{ confirmed_player }}
+        {% if player == confirmed_player.pk %}
+          <div class="revert-container">
+            <a class="btn red" data-url="{% url "group-match-revert" group.pk match.pk %}">CANCEL</a>
+          </div>
         {% endif %}
-      </ul>
-      <h3>Confirmed ({{ match.get_confirmed_list|length }})</h3>
-      <ul>
-        {% for confirmed_player in match.get_confirmed_list %}
-          <li>{{ confirmed_player }}</li>
-        {% empty %}
-          <li>No confirmed players</li>
-        {% endfor %}
-      </ul>
-    </div>
-    <div class="not-confirmed-list">
-      <h3>Not confirmed</h3>
-      <ul>
-        {% for not_confirmed_player in unaswered %}
-          <li>{{ not_confirmed_player }}
-            {% if user_is_admin %}
-            <div class="confirm-container">
-              <a class="btn btn-floating btn-tiny green btn-accept-invitation" data-url="{% url "group-match-accept" group.pk match.pk %}?u={{ not_confirmed_player.pk }}">
-                <i class="material-icons">done</i>
-              </a>
-              <a class="btn btn-floating btn-tiny red btn-refuse-invitation" data-url="{% url "group-match-reject" group.pk match.pk %}">
-                <i class="material-icons">clear</i>
-              </a>
-            </div>
-            {% endif %}
-          </li>
-        {% empty %}
-          <li>No confirmed players</li>
-        {% endfor %}
-        {% for refused_player in match.get_refused_list %}
-          <li class="disabled">{{ refused_player }}</li>
-        {% endfor %}
-      </ul>
-    </div>
-  </div>
-  <div class="col m4">
-    {{ match.venue }}
-    <div class="geoposition-widget" data-map-widget-height="{{ config.map_widget_height }}" data-map-options="{{ config.map_options }}" data-marker-options="{{ config.marker_options }}">
-      <div id="map-canvas" style="height: 300px;"></div>
-      <script>
-                function initialize() {
-                    var map = new google.maps.Map(document.getElementById('map-canvas'));
-                    var bounds = new google.maps.LatLngBounds();
-                    function addMarker(lat, lng, title) {
-                        var position = new google.maps.LatLng(lat, lng);
-                        var marker = new google.maps.Marker({
-                            position: position,
-                            map: map,
-                            title: "{{ venue.quadra }}"
-                        });
-                        bounds.extend(position);
-                        map.fitBounds(bounds);
-                        map.setOptions({maxZoom: 14});
-                    }
-                    addMarker({{ match.venue.location.latitude|unlocalize }}, {{ match.venue.location.longitude|unlocalize }}, "{{ venue.quadra }}");
-                }
-                google.maps.event.addDomListener(window, 'load', initialize);
-            </script>
-    </div>
-    <div class="venue-address">
-      {{ match.venue.address }}
-    </div>
-  </div>
+      </li>
+    {% empty %}
+      <li>No confirmed players</li>
+    {% endfor %}
+  </ul>
+</div>
+<div class="not-confirmed-list">
+  <h3>Not confirmed</h3>
+  <ul>
+    {% for not_confirmed_player in unaswered %}
+      <li>{{ not_confirmed_player }}
+        {% if user_is_admin %}
+        <div class="confirm-container">
+          <a class="btn btn-floating btn-tiny green btn-accept-invitation" data-url="{% url "group-match-accept" group.pk match.pk %}?u={{ not_confirmed_player.pk }}">
+            <i class="material-icons">done</i>
+          </a>
+          <a class="btn btn-floating btn-tiny red btn-refuse-invitation" data-url="{% url "group-match-reject" group.pk match.pk %}">
+            <i class="material-icons">clear</i>
+          </a>
+        </div>
+        {% endif %}
+      </li>
+    {% empty %}
+      <li>No confirmed players</li>
+    {% endfor %}
+    {% for refused_player in match.get_refused_list %}
+      <li class="disabled">
+        {{ refused_player }}
+        {% if player == refused_player.pk %}
+        <div class="revert-container">
+          <a class="btn red" data-url="{% url "group-match-revert" group.pk match.pk %}">CANCEL</a>
+        </div>
+        {% endif %}
+      </li>
+    {% endfor %}
+  </ul>
 </div>

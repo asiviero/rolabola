@@ -54,25 +54,23 @@
       })
     })
 
-    $(".confirm-container .btn").click(function() {
+    $("body").on("click",".confirm-container .btn,.revert-container .btn",function() {
+      console.log("clicked")
       var url = $(this).data("url")
       ajaxGet(url, function(content){
 
       })
     })
 
-    $(".automatic-confirmation-wrapper label").click(function() {
+    $("body").on("click",".automatic-confirmation-wrapper label",function() {
       var url = $(this).siblings("input").addBack().data("url")
-      console.log(url)
       ajaxGet(url, function(content){
 
       })
     })
+
     $(".geoposition-widget").on("marker_dragged",function(e,data){
-      console.log(e)
-      console.log(data)
       $("#id_address").val(data.address)
-      //console.log($(this).text());
     });
 
     $('.modal-trigger').leanModal();
@@ -108,8 +106,4 @@
       ajaxPost($(this).data("url"), {})
     })
   })
-
-
-
-
 })(jQuery)
