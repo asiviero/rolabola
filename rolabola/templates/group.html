@@ -30,7 +30,7 @@
     <ul>
       {% for member in group.member_list.all %}
         <li>
-          {{ member.user }}
+          {{ member.user.player }}
         </li>
       {% endfor %}
     </ul>
