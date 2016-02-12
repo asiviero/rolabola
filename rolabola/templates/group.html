@@ -30,7 +30,7 @@
     <ul>
       {% for member in group.member_list.all %}
         <li>
-          {{ member.user.first_name }}  {{ member.user.last_name }} ({{ member.nickname }})
+          {{ member.user }}
         </li>
       {% endfor %}
     </ul>
@@ -62,7 +62,6 @@
   {% endif %}
   <div id="calendar-monthly-view">
     <div class="calendar-nav">
-      {{group.pk}}
       <a class="btn-nav btn-prev btn-floating btn-tiny green" data-next="0" data-day="{% now 'd' %}" data-month="{% now 'm' %}" data-year="{% now 'Y' %}" data-group="{{ group.pk }}" data-url="{% url 'calendar-update-monthly' %}">
         <i class="material-icons">chevron_left</i>
       </a>
@@ -73,6 +72,17 @@
     </div>
     <div class="calendar-table">
       {{ calendar_view }}
+    </div>
+    <div id="message-wall">
+      {% for message in messages %}
+        {{ message }}
+      {% endfor %}
+      <div id="message-form-wrapper">
+        <form id="message-form" data-url="{% url 'message-send' group.pk %}">
+          {% csrf_token %}
+          {{ message_form }}
+        </form>
+      </div>
     </div>
   </div>
   {% if is_admin %}

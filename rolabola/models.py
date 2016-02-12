@@ -15,6 +15,9 @@ from celery.utils.log import get_task_logger
 from rolabola.models import *
 from rolabola.widgets import *
 from django.core.urlresolvers import reverse
+from guardian.models import UserObjectPermission
+from guardian.decorators import *
+from django.template import  loader
 logger = get_task_logger(__name__)
 
 #import os
@@ -51,8 +54,8 @@ def match_didnt_reach_max_confirmations(view_func):
 
 def user_is_in_group(view_func):
     def _wrapped_view_func(player, *args, **kwargs):
-        group = get_object_or_404(Match, pk=kwargs["group"].pk)
-        if Membership.objects.get(group__pk=group.pk,member__pk=player.pk):
+        group = get_object_or_404(Group, pk=kwargs["group"].pk)
+        if Membership.objects.filter(group__pk=group.pk,member__pk=player.pk).count():
             return view_func(player, *args, **kwargs)
         pass
     return _wrapped_view_func
@@ -79,7 +82,9 @@ class Player(models.Model):
         return settings.MEDIA_URL + str(self.picture)
 
     def __str__(self):
-        return u"%s %s (%s)" % (self.user.first_name,self.user.last_name,self.nickname)
+        name = u"%s %s" % (self.user.first_name,self.user.last_name)
+        name = u"%s (%s)" % (name,self.nickname) if len(self.nickname) else name
+        return name
 
     def add_user(self,friend,message=""):
 
@@ -152,17 +157,18 @@ class Player(models.Model):
             group__pk__in=group_list
         )
 
-    def schedule_match(self,group,date,max_participants,min_participants,price,until=None):
+    def schedule_match(self,group,date,max_participants,min_participants,price,venue,until=None):
         if not until is None:
             base_date = date + datetime.timedelta(days=7)
-            while base_date < until:
+            while base_date <= until:
                 schedule_match_task.delay(
                     player=self.pk,
                     group=group.pk,
                     date={"year":base_date.year,"month":base_date.month,"day":base_date.day},
                     max_participants=max_participants,
                     min_participants=min_participants,
-                    price=str(price)
+                    price=str(price),
+                    venue=venue.pk
                 )
                 base_date += datetime.timedelta(days=7)
         if Membership.objects.filter(member__pk=self.id,group__pk=group.pk,role=Membership.GROUP_ADMIN).count():
@@ -171,7 +177,8 @@ class Player(models.Model):
                 date=date,
                 max_participants=max_participants,
                 min_participants=min_participants,
-                price=price
+                price=price,
+                venue=venue
             )
 
     def get_match_invitations(self,start_date=None,end_date=None,group=None):
@@ -209,6 +216,20 @@ class Player(models.Model):
     def toggle_automatic_confirmation_in_group(self,group):
         Membership.objects.get(member__pk=self.pk,group__pk=group.pk).toggle_automatic_confirmation()
         return Membership.objects.get(member__pk=self.pk,group__pk=group.pk).automatic_confirmation
+
+    @user_is_in_group
+    def send_message_group(self,group,message):
+        message = Message.objects.create(
+            group=group,
+            player=self,
+            message=message
+        )
+        admin_players = group.member_list.filter(membership__role=Membership.GROUP_ADMIN)
+        for player in admin_players:
+            UserObjectPermission.objects.assign_perm("delete_message",user=player.user,obj=message)
+        UserObjectPermission.objects.assign_perm("delete_message",user=self.user,obj=message)
+        return message
+
 
 User.player = property(lambda u: Player.objects.get_or_create(user=u)[0])
 
@@ -277,14 +298,21 @@ class Group(models.Model):
             return self.picture
         return settings.MEDIA_URL + str(self.picture)
 
+    def get_messages(self):
+        return self.message_set.order_by("-created")
+
+    def get_friends_from_user(self,player):
+        return self.member_list.filter(membership__member__in=player.friend_list.all())
+
 @task(name="schedule_match_task")
-def schedule_match_task(player,group,date,max_participants,min_participants,price):
+def schedule_match_task(player,group,date,max_participants,min_participants,price,venue):
     try:
         logger.info("Scheduling...")
         player = Player.objects.get(pk=player)
         group = Group.objects.get(pk=group)
+        venue = Venue.objects.get(pk=venue)
         date = timezone.make_aware(datetime.datetime(date.get("year"),date.get("month"),date.get("day")))
-        player.schedule_match(group,date,max_participants,min_participants,price)
+        player.schedule_match(group,date,max_participants,min_participants,price,venue)
     except Player.DoesNotExist:
         pass
     except Group.DoesNotExist:
@@ -447,5 +475,24 @@ class MatchInvitation(models.Model):
         self.save()
 
     def revert_confirmation(self):
-        self.status = self.NOT_CONFIRMED if self.status == self.CONFIRMED else self.CONFIRMED
+        self.status = self.NOT_CONFIRMED if self.status in (self.CONFIRMED,self.ABSENCE_CONFIRMED) else self.CONFIRMED
         self.save()
+
+
+class Message(models.Model):
+    player = models.ForeignKey(Player)
+    group = models.ForeignKey(Group)
+    message = models.TextField()
+    created = models.DateTimeField(auto_now_add=True)
+
+    @property
+    def user(self):
+        return self.player.user
+
+class MessageForm(ModelForm):
+    class Meta:
+        model = Message
+        fields = ["message"]
+        widgets = {
+            "message" : forms.TextInput
+        }

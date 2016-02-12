@@ -27,10 +27,13 @@ urlpatterns = [
     url(r'^group/(\d+)/match$', views.group_match_create, name="group-match-create"),
     url(r'^group/(\d+)/match/(\d+)/$', views.group_match, name="group-match"),
     url(r'^group/(\d+)/match/(\d+)/accept$', views.group_match_accept, name="group-match-accept"),
+    url(r'^group/(\d+)/match/(\d+)/revert$', views.group_match_revert, name="group-match-revert"),
     url(r'^group/(\d+)/match/(\d+)/reject$', views.group_match_reject, name="group-match-reject"),
     url(r'^calendar/update-weekly/$', views.calendar_update_weekly, name="calendar-update-weekly"),
     url(r'^calendar/update-monthly/$', views.calendar_update_monthly, name="calendar-update-monthly"),
     url(r'^venue/(\d+)/$', views.venue, name="venue"),
-    url(r'^venue/create$', views.venue_create, name="venue-create")
+    url(r'^venue/create$', views.venue_create, name="venue-create"),
+    url(r'^group/(\d+)/message/send$', views.message_send, name="message-send"),
+    url(r'^message/(\d+)/delete$', views.message_delete, name="message-delete")
 
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT) + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

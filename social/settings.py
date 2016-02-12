@@ -48,6 +48,7 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
     'geoposition',
     'rolabola',
+    'guardian',
     'django_ajax'
 )
 
@@ -161,3 +162,9 @@ CELERY_TIMEZONE = 'America/Sao_Paulo'
 # Maps
 
 GOOGLE_MAPS_V3_APIKEY = "AIzaSyANMg7jLGPM9Jt-YpRVl_VgVqMDvX7kAA4"
+
+AUTHENTICATION_BACKENDS = (
+    'django.contrib.auth.backends.ModelBackend', # default
+    'guardian.backends.ObjectPermissionBackend',
+)
+ANONYMOUS_USER_ID = -1

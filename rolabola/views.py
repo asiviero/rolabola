@@ -6,6 +6,7 @@ from django.contrib.auth import authenticate, login
 from django.contrib.auth.models import User
 from django.forms.models import inlineformset_factory
 from django.template import Context, Template, loader
+from django.db.models import Count, When, F
 from rolabola.models import *
 from rolabola.forms import SearchForm
 from rolabola.decorators import *
@@ -18,8 +19,7 @@ import datetime
 import dateutil.relativedelta
 import json
 from django.utils import timezone
-
-
+from guardian.decorators import permission_required_or_403
 
 # Create your views here.
 @login_required
@@ -169,14 +169,30 @@ def search(request):
             Q(player__nickname__icontains=request.GET.get("name"))
         )
     elif request.GET.get("qtype") == "Group":
-        results = Group.objects.filter(
-            Q(name__icontains=request.GET.get("name"))
-        )
 
-        results = [{"res":x,
-                          "member":False if request.user.is_anonymous() else x.member_list.filter(pk=request.user.player.pk).exists() ,
-                          "membership_requested":False if request.user.is_anonymous() else x.member_pending_list.filter(pk=request.user.player.pk).exists()
-                        } for x in results]
+        if not request.user.is_anonymous():
+            friend_list = [x.pk for x in request.user.player.friend_list.all()]
+            if len(friend_list) :
+                results = Group.objects.filter(
+                    Q(name__icontains=request.GET.get("name"))
+                ).annotate(member_list_count=Count(Q(membership__member__in=friend_list),distinct=True)).order_by("-member_list_count")
+            else :
+                results = Group.objects.filter(
+                    Q(name__icontains=request.GET.get("name"))
+                )
+        else :
+            results = Group.objects.filter(
+                Q(name__icontains=request.GET.get("name"))
+            )
+
+        group_result_list_template = loader.get_template("search/search_result_group.html")
+        results = [group_result_list_template.render({
+            "group":x,
+            "member":False if request.user.is_anonymous() else x.member_list.filter(pk=request.user.player.pk).exists() ,
+            "membership_requested":False if request.user.is_anonymous() else x.member_pending_list.filter(pk=request.user.player.pk).exists(),
+            "friends_in_group":[] if request.user.is_anonymous() else x.get_friends_from_user(request.user.player)
+        }) for x in results]
+
     return render(request, "search_results.html", {
         "model" : request.GET.get("qtype"),
         "name_query" : urllib.parse.urlencode({"name":request.GET.get("name")}),
@@ -222,6 +238,10 @@ def group(request,group):
 
     calendar_view = calendar_template.render({"days_label":days,"weeks":weeks,"today":today})
 
+    message_list_template = loader.get_template("message/message.html")
+    rendered_messages = [message_list_template.render({"message":message,"is_admin":is_admin,"player":request.user.player}) for message in group.get_messages()]
+    # message_list_template.render({"message":self})
+
     return render(request, "group.html", {
         "group":group,
         "user_in_group":user_in_group,
@@ -229,7 +249,9 @@ def group(request,group):
         "request_list":group.member_pending_list.all(),
         "is_admin":is_admin,
         "calendar_view":calendar_view,
-        "automatic_confirmation":automatic_confirmation
+        "automatic_confirmation":automatic_confirmation,
+        "message_form":MessageForm,
+        "messages":rendered_messages
     })
 
 @login_required
@@ -322,6 +344,7 @@ def group_match_create(request,group):
                 max_participants=group_match_create_form.cleaned_data["max_participants"],
                 min_participants=group_match_create_form.cleaned_data["min_participants"],
                 price=group_match_create_form.cleaned_data["price"],
+                venue=group_match_create_form.cleaned_data["venue"],
                 until=until
             )
             return redirect(reverse("group-match", args=(match.group.id,match.id,)))
@@ -331,12 +354,14 @@ def group_match_create(request,group):
 
 @login_required
 def group_match(request,group,match):
-    group=get_object_or_404(Group,pk=group)
-    match=get_object_or_404(Match,pk=match)
+    group = get_object_or_404(Group,pk=group)
+    match = get_object_or_404(Match,pk=match)
+    # print("wolowo: %d" % request.user.player.pk)
     context = {
-        "group":group,
-        "match": match,
-        "user_is_admin":request.user.player in group.member_list.filter(membership__role=Membership.GROUP_ADMIN),
+        "group" : group,
+        "match" : match,
+        "player" : request.user.player.pk,
+        "user_is_admin" : request.user.player in group.member_list.filter(membership__role=Membership.GROUP_ADMIN),
     }
 
     if request.user.player in match.get_unanswered_list():
@@ -365,7 +390,6 @@ def group_match_accept(request,group,match):
     else:
         player = request.user.player
 
-    print(player.pk)
     player.accept_match_invitation(match=match)
     match_invitation_template = loader.get_template("match_invitation_calendar.html")
 
@@ -373,6 +397,8 @@ def group_match_accept(request,group,match):
     context = {
         "group":group,
         "match": match,
+        "player" : request.user.player.pk,
+        "user_is_admin":request.user.player in group.member_list.filter(membership__role=Membership.GROUP_ADMIN),
     }
 
     if request.user.player in match.get_unanswered_list():
@@ -411,6 +437,8 @@ def group_match_reject(request,group,match):
     context = {
         "group":group,
         "match": match,
+        "player" : request.user.player.pk,
+        "user_is_admin":request.user.player in group.member_list.filter(membership__role=Membership.GROUP_ADMIN),
     }
 
     if request.user.player in match.get_unanswered_list():
@@ -428,6 +456,64 @@ def group_match_reject(request,group,match):
     }
 
     return response
+
+@login_required
+@ajax
+def group_match_revert(request,group,match):
+    group=get_object_or_404(Group,pk=group)
+    match=get_object_or_404(Match,pk=match)
+
+    if request.GET.get("u") is not None:
+        if request.user.player in group.member_list.filter(membership__role=Membership.GROUP_ADMIN):
+            player = get_object_or_404(Player,pk=request.GET.get("u"))
+        else:
+            return {}
+    else:
+        player = request.user.player
+
+    player.revert_match_invitation(match=match)
+    match_invitation_template = loader.get_template("match_invitation_calendar.html")
+
+    match_confirmed_list_template = loader.get_template("match/match_confirmed_list.html")
+    context = {
+        "group":group,
+        "match": match,
+        "player" : request.user.player.pk,
+        "user_is_admin":request.user.player in group.member_list.filter(membership__role=Membership.GROUP_ADMIN),
+    }
+
+    if request.user.player in match.get_unanswered_list():
+        context["header"] = request.user.player
+        context["unaswered"] = match.get_unanswered_list().exclude(pk=request.user.player.pk)
+    else:
+        context["header"] = None
+        context["unaswered"] = match.get_unanswered_list()
+
+    response = {
+        "inner-fragments" : {
+            ".match-invitation[data-match='%s']" % match.pk : match_invitation_template.render({"match_invitation":MatchInvitation.objects.get(player__pk=request.user.player.pk,match__pk=match.pk)}),
+            ".confirmed-list-wrapper" : match_confirmed_list_template.render(context)
+        }
+    }
+
+    return response
+
+
+@login_required
+@group_membership_required
+@ajax
+def message_send(request,group):
+    group = get_object_or_404(Group,pk=group)
+    message = request.user.player.send_message_group(group=group,message=request.POST.get("message"))
+    if not message is None:
+        message_list_template = loader.get_template("message/message.html")
+        return {
+            "prepend-fragments" : {
+                "#message-wall" : message_list_template.render({"message":message})
+            }
+        }
+    else:
+        return HttpResponseServerError()
 
 @login_required
 def venue(request,venue):
@@ -454,3 +540,25 @@ def venue_create(request):
     return render(request, "venue/venue_create.html", {
         "venue_form":VenueForm,
     })
+
+def turn_message_arg_into_message_kwarg(view_func):
+    def _wrapped_view_func(player, *args, **kwargs):
+        kwargs["message"] = args[0]
+        args = {}
+        return view_func(player, *args, **kwargs)
+    return _wrapped_view_func
+
+
+@turn_message_arg_into_message_kwarg
+@permission_required_or_403("delete_message",(Message,"pk","message"))
+@ajax
+def message_delete(request,message):
+    message = get_object_or_404(Message,pk=message)
+    pk = message.pk
+    group = message.group
+    message.delete()
+    return {
+        "fragments" : {
+            ".message-wrapper[data-message=%s]" % pk : ""
+        }
+    }

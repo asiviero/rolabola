@@ -1,4 +1,5 @@
 from django.test import TestCase, Client
+from django.db.models import Count, When, F
 from django.test.utils import override_settings
 from django.contrib.auth.models import User
 from django.utils import timezone
@@ -98,7 +99,6 @@ class FriendshipTest(TestCase):
 
 
 class GroupTest(TestCase):
-
 
     def test_user_can_join_public_group(self):
         user_1 = PlayerFactory()
@@ -321,11 +321,14 @@ class GroupTest(TestCase):
         user_2.join_group(group_1)
         user_3.join_group(group_1)
 
+        venue_1 = VenueFactory()
+
         user_1.schedule_match(group_1,
                                             date=timezone.make_aware(datetime.datetime.now() + datetime.timedelta(days=3)),
                                             max_participants=15,
                                             min_participants=10,
-                                            price=Decimal("20.0"))
+                                            price=Decimal("20.0"),
+                                            venue=venue_1)
 
         # Checks if a match was created
         self.assertEqual(Match.objects.all().count(),1)
@@ -345,7 +348,29 @@ class GroupTest(TestCase):
         # Check if user 4 was not invited
         self.assertEqual(MatchInvitation.objects.filter(player__pk=user_4.id).count(),1)
 
+    def test_retrieve_friends_in_group(self):
+        user_1 = PlayerFactory()
+        user_2 = PlayerFactory()
+        user_3 = PlayerFactory()
+        user_4 = PlayerFactory()
 
+        group_1 = user_1.create_group("Group 1", public=True)
+
+        user_1.add_user(user_2)
+        user_1.add_user(user_3)
+        user_2.accept_request_from_friend(user_1)
+        user_3.accept_request_from_friend(user_1)
+
+        user_2.join_group(group_1)
+        user_3.join_group(group_1)
+        user_4.join_group(group_1)
+
+        friends = group_1.get_friends_from_user(user_1)
+
+        self.assertEqual(len(friends),2)
+        self.assertIn(user_2,friends)
+        self.assertIn(user_3,friends)
+        self.assertNotIn(user_4,friends)
 
 
 class RegistrationTest(TestCase):
@@ -412,10 +437,53 @@ class SearchTest(TestCase):
         self.assertContains(response,group_1.name)
         self.assertNotContains(response,group_2.name)
 
+    def test_search_must_be_ordered_by_number_of_friends(self):
+        user_1 = PlayerFactory()
+        user_2 = PlayerFactory()
+        user_3 = PlayerFactory()
+        user_4 = PlayerFactory()
+        user_5 = PlayerFactory()
+        user_6 = PlayerFactory()
+        user_7 = PlayerFactory()
+
+        group_1 = user_1.create_group("Group 1", public=True)
+        group_2 = user_1.create_group("Group 2", public=True)
+        group_3 = user_1.create_group("Group 3", public=True)
+        group_4 = user_4.create_group("Group 4", public=True)
+
+        user_1.add_user(user_2)
+        user_2.accept_request_from_friend(user_1)
+        user_1.add_user(user_3)
+        user_3.accept_request_from_friend(user_1)
+
+        user_2.join_group(group_2)
+        user_2.join_group(group_3)
+        user_3.join_group(group_2)
+        user_5.join_group(group_4)
+        user_6.join_group(group_4)
+        user_7.join_group(group_4)
+
+        results = Group.objects.filter(
+            Q(name__icontains="Group") &
+            Q(membership__member__in=[user_1.pk,user_2.pk])
+        )
+        # print(results)
+
+        # Search will be performed
+        results = Group.objects.filter(
+            Q(name__icontains="Group")
+        ).annotate(member_list_count=Count(Q(membership__member__in=([x.pk for x in user_1.friend_list.all()])),distinct=True)).order_by("-member_list_count")
+        # print(results)
+
+        self.assertEqual(results[0].pk,group_2.pk)
+        self.assertEqual(results[1].pk,group_3.pk)
+        self.assertEqual(results[2].pk,group_1.pk)
+
 class MatchTest(TestCase):
 
     @override_settings(CELERY_ALWAYS_EAGER=True)
     def test_user_can_schedule_match(self):
+        venue_1 = VenueFactory()
         user_1 = PlayerFactory()
         user_2 = PlayerFactory()
         user_3 = PlayerFactory()
@@ -430,7 +498,8 @@ class MatchTest(TestCase):
                                             date=timezone.make_aware(datetime.datetime.now() + datetime.timedelta(days=3)),
                                             max_participants=15,
                                             min_participants=10,
-                                            price=Decimal("20.0"))
+                                            price=Decimal("20.0"),
+                                            venue=venue_1)
 
         # Checks if a match was created
         self.assertEqual(Match.objects.all().count(),1)
@@ -443,6 +512,7 @@ class MatchTest(TestCase):
 
     @override_settings(CELERY_ALWAYS_EAGER=True)
     def test_nonadmin_user_cant_schedule_match(self):
+        venue_1 = VenueFactory()
         user_1 = PlayerFactory()
         user_2 = PlayerFactory()
         user_3 = PlayerFactory()
@@ -457,7 +527,8 @@ class MatchTest(TestCase):
                                             date=timezone.make_aware(datetime.datetime.now() + datetime.timedelta(days=3)),
                                             max_participants=15,
                                             min_participants=10,
-                                            price=Decimal("20.0"))
+                                            price=Decimal("20.0"),
+                                            venue=venue_1)
 
         # Checks if a match was not created
         self.assertEqual(Match.objects.all().count(),0)
@@ -467,6 +538,7 @@ class MatchTest(TestCase):
 
     @override_settings(CELERY_ALWAYS_EAGER=True)
     def test_admin_user_can_schedule_match_only_for_his_own_groups(self):
+        venue_1 = VenueFactory()
         user_1 = PlayerFactory()
         user_2 = PlayerFactory()
         user_3 = PlayerFactory()
@@ -482,7 +554,8 @@ class MatchTest(TestCase):
                                             date=timezone.make_aware(datetime.datetime.now() + datetime.timedelta(days=3)),
                                             max_participants=15,
                                             min_participants=10,
-                                            price=Decimal("20.0"))
+                                            price=Decimal("20.0"),
+                                            venue=venue_1)
 
         # Checks if a match was not created
         self.assertEqual(Match.objects.all().count(),0)
@@ -492,6 +565,7 @@ class MatchTest(TestCase):
 
     @override_settings(CELERY_ALWAYS_EAGER=True)
     def test_schedule_until(self):
+        venue_1 = VenueFactory()
         user_1 = PlayerFactory()
         user_2 = PlayerFactory()
         user_3 = PlayerFactory()
@@ -504,6 +578,7 @@ class MatchTest(TestCase):
                                             max_participants=15,
                                             min_participants=10,
                                             price=Decimal("20.0"),
+                                            venue=venue_1,
                                             until=timezone.make_aware(datetime.datetime.now() + datetime.timedelta(days=500)))
 
         rule = rrule.rrule(rrule.DAILY,
@@ -533,21 +608,25 @@ class CalendarTest(TestCase):
         user_3.join_group(group_1)
         user_3.join_group(group_2)
         user_4.join_group(group_1)
+        venue_1 = VenueFactory()
         user_1.schedule_match(group_1,
                                             date=timezone.make_aware(datetime.datetime.now()),
                                             max_participants=15,
                                             min_participants=10,
-                                            price=Decimal("20.0"))
+                                            price=Decimal("20.0"),
+                                            venue=venue_1)
         user_1.schedule_match(group_2,
                                             date=timezone.make_aware(datetime.datetime.now()+datetime.timedelta(days=1)),
                                             max_participants=15,
                                             min_participants=10,
-                                            price=Decimal("20.0"))
+                                            price=Decimal("20.0"),
+                                            venue=venue_1)
         user_1.schedule_match(group_3,
                                             date=timezone.make_aware(datetime.datetime.now()+datetime.timedelta(days=2)),
                                             max_participants=15,
                                             min_participants=10,
-                                            price=Decimal("20.0"))
+                                            price=Decimal("20.0"),
+                                            venue=venue_1)
         match_invitation_list_user_1 = user_1.get_match_invitations()
         self.assertEqual(len(match_invitation_list_user_1),3)
         match_invitation_list_user_2 = user_2.get_match_invitations()
@@ -570,17 +649,20 @@ class CalendarTest(TestCase):
         user_1.accept_request_group(group=group_2,user=user_2)
         user_3.join_group(group_1)
         user_3.join_group(group_2)
+        venue_1 = VenueFactory()
 
         user_1.schedule_match(group_1,
                                             date=timezone.make_aware(datetime.datetime.now()),
                                             max_participants=15,
                                             min_participants=10,
-                                            price=Decimal("20.0"))
+                                            price=Decimal("20.0"),
+                                            venue=venue_1)
         user_1.schedule_match(group_2,
                                             date=timezone.make_aware(datetime.datetime.now()+datetime.timedelta(days=1)),
                                             max_participants=15,
                                             min_participants=10,
-                                            price=Decimal("20.0"))
+                                            price=Decimal("20.0"),
+                                            venue=venue_1)
 
         match_invitation_list_user_1 = user_1.get_match_invitations()
         self.assertEqual(len(match_invitation_list_user_1),2)
@@ -595,6 +677,7 @@ class CalendarTest(TestCase):
     def test_filter_match_invitation_by_dates(self):
         user_1 = PlayerFactory()
         user_2 = PlayerFactory()
+        venue_1 = VenueFactory()
         group_1 = user_1.create_group("Group 1", public=True)
         user_2.join_group(group_1)
         user_1.schedule_match(group_1,
@@ -602,12 +685,14 @@ class CalendarTest(TestCase):
                                             max_participants=15,
                                             min_participants=10,
                                             price=Decimal("20.0"),
+                                            venue=venue_1,
                                             until=timezone.make_aware(datetime.datetime.now() + datetime.timedelta(days=500)))
         user_1.schedule_match(group_1,
                                             date=timezone.make_aware(datetime.datetime.now()) + datetime.timedelta(days=1),
                                             max_participants=15,
                                             min_participants=10,
                                             price=Decimal("20.0"),
+                                            venue=venue_1,
                                             until=timezone.make_aware(datetime.datetime.now() + datetime.timedelta(days=500)))
 
         match_invitation_list_user_1 = user_1.get_match_invitations(
@@ -624,16 +709,19 @@ class CalendarTest(TestCase):
         group_2 = user_1.create_group("Group 2", public=True)
         user_2.join_group(group_1)
         user_2.join_group(group_2)
+        venue_1 = VenueFactory()
         user_1.schedule_match(group_1,
                                             date=timezone.make_aware(datetime.datetime.now()),
                                             max_participants=15,
                                             min_participants=10,
-                                            price=Decimal("20.0"))
+                                            price=Decimal("20.0"),
+                                            venue=venue_1)
         user_1.schedule_match(group_2,
                                             date=timezone.make_aware(datetime.datetime.now()) + datetime.timedelta(days=1),
                                             max_participants=15,
                                             min_participants=10,
-                                            price=Decimal("20.0"))
+                                            price=Decimal("20.0"),
+                                            venue=venue_1)
 
         match_invitation_list_user_2 = user_2.get_match_invitations(group=group_1)
         self.assertEqual(len(match_invitation_list_user_2),1)
@@ -670,26 +758,31 @@ class MatchConfirmationTest(TestCase):
         self.group_3 = self.user_2.create_group("Group 1", public=False)
         self.user_2.join_group(self.group_1)
         self.user_3.join_group(self.group_1)
+        self.venue_1 = VenueFactory()
         self.match = self.user_1.schedule_match(self.group_1,
                                             date=timezone.make_aware(datetime.datetime.now()),
                                             max_participants=15,
                                             min_participants=10,
-                                            price=Decimal("20.0"))
+                                            price=Decimal("20.0"),
+                                            venue=self.venue_1)
         self.match_private = self.user_1.schedule_match(self.group_2,
                                             date=timezone.make_aware(datetime.datetime.now()),
                                             max_participants=15,
                                             min_participants=10,
-                                            price=Decimal("20.0"))
+                                            price=Decimal("20.0"),
+                                            venue=self.venue_1)
         self.match_third = self.user_2.schedule_match(self.group_3,
                                             date=timezone.make_aware(datetime.datetime.now()),
                                             max_participants=15,
                                             min_participants=10,
-                                            price=Decimal("20.0"))
+                                            price=Decimal("20.0"),
+                                            venue=self.venue_1)
         self.match_restricted = self.user_1.schedule_match(self.group_1,
                                             date=timezone.make_aware(datetime.datetime.now())+dateutil.relativedelta.relativedelta(hour=1),
                                             max_participants=2,
                                             min_participants=1,
-                                            price=Decimal("20.0"))
+                                            price=Decimal("20.0"),
+                                            venue=self.venue_1)
 
 
 
@@ -784,12 +877,27 @@ class MatchConfirmationTest(TestCase):
         self.user_2.accept_match_invitation(match=self.match)
         user_2_invitation = MatchInvitation.objects.get(match__pk=self.match.pk,player__pk=self.user_2.pk)
         self.assertEqual(user_2_invitation.status,MatchInvitation.CONFIRMED)
+
         self.user_2.revert_match_invitation(match=self.match)
         user_2_invitation = MatchInvitation.objects.get(match__pk=self.match.pk,player__pk=self.user_2.pk)
         self.assertEqual(user_2_invitation.status,MatchInvitation.NOT_CONFIRMED)
+
         self.user_2.revert_match_invitation(match=self.match)
         user_2_invitation = MatchInvitation.objects.get(match__pk=self.match.pk,player__pk=self.user_2.pk)
         self.assertEqual(user_2_invitation.status,MatchInvitation.CONFIRMED)
+
+        self.user_2.revert_match_invitation(match=self.match)
+        user_2_invitation = MatchInvitation.objects.get(match__pk=self.match.pk,player__pk=self.user_2.pk)
+        self.assertEqual(user_2_invitation.status,MatchInvitation.NOT_CONFIRMED)
+
+        self.user_2.refuse_match_invitation(match=self.match)
+        user_2_invitation = MatchInvitation.objects.get(match__pk=self.match.pk,player__pk=self.user_2.pk)
+        self.assertEqual(user_2_invitation.status,MatchInvitation.ABSENCE_CONFIRMED)
+
+        self.user_2.revert_match_invitation(match=self.match)
+        user_2_invitation = MatchInvitation.objects.get(match__pk=self.match.pk,player__pk=self.user_2.pk)
+        self.assertEqual(user_2_invitation.status,MatchInvitation.NOT_CONFIRMED)
+        
 
     def test_user_cant_revert_other_user_status(self):
         self.user_2.accept_match_invitation(match=self.match)
@@ -821,8 +929,89 @@ class MatchConfirmationTest(TestCase):
                                             date=timezone.make_aware(datetime.datetime.now()),
                                             max_participants=15,
                                             min_participants=10,
-                                            price=Decimal("20.0"))
+                                            price=Decimal("20.0"),
+                                            venue=self.venue_1)
         user_2_invitation = MatchInvitation.objects.get(match__pk=new_match.pk,player__pk=self.user_2.pk)
         self.assertEqual(user_2_invitation.status,MatchInvitation.CONFIRMED)
         user_3_invitation = MatchInvitation.objects.get(match__pk=new_match.pk,player__pk=self.user_3.pk)
         self.assertEqual(user_3_invitation.status,MatchInvitation.NOT_CONFIRMED)
+
+class MessageTest(TestCase):
+
+    def setUp(self):
+        self.user_1 = PlayerFactory()
+        self.user_2 = PlayerFactory()
+        self.user_3 = PlayerFactory()
+        self.user_4 = PlayerFactory()
+        self.group_1 = self.user_1.create_group("Group 1", public=True)
+        self.group_2 = self.user_1.create_group("Group 2", public=False)
+        self.user_2.join_group(self.group_1)
+        self.user_2.join_group(self.group_2)
+        self.user_1.accept_request_group(group=self.group_2,user=self.user_2)
+        self.user_3.join_group(self.group_1)
+        self.user_3.join_group(self.group_2)
+
+        # Message sending
+        self.user_1.send_message_group(group=self.group_1,message="test message 1")
+        self.user_2.send_message_group(group=self.group_1,message="test message 2")
+        self.user_3.send_message_group(group=self.group_1,message="test message 3")
+        self.user_1.send_message_group(group=self.group_2,message="test message 1")
+        self.user_2.send_message_group(group=self.group_2,message="test message 2")
+        self.user_3.send_message_group(group=self.group_2,message="test message 3")
+
+    def test_user_can_send_message(self):
+
+        messages_in_group_1 = self.group_1.get_messages()
+        self.assertEqual(len(messages_in_group_1),3)
+        self.assertEqual(messages_in_group_1[0].message,"test message 3")
+        self.assertEqual(messages_in_group_1[1].message,"test message 2")
+        self.assertEqual(messages_in_group_1[2].message,"test message 1")
+
+        messages_in_group_2 = self.group_2.get_messages()
+        self.assertEqual(len(messages_in_group_2),2)
+        self.assertEqual(messages_in_group_2[0].message,"test message 2")
+        self.assertEqual(messages_in_group_2[1].message,"test message 1")
+
+    def test_message_deletion_user(self):
+        messages_in_group_1 = self.group_1.get_messages()
+        c = Client()
+
+        c.post("/login/",{"username":self.user_3.user.email,"password":"123456","form":"login_form"})
+        response = c.post("/message/%d/delete" % messages_in_group_1[0].pk,{},HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(response.status_code,200)
+
+        messages_in_group_1 = self.group_1.get_messages()
+        self.assertEqual(len(messages_in_group_1),2)
+
+        response = c.post("/message/%d/delete" % messages_in_group_1[0].pk,{},HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(response.status_code,403)
+
+        messages_in_group_1 = self.group_1.get_messages()
+        self.assertEqual(len(messages_in_group_1),2)
+
+        messages_in_group_2 = self.group_2.get_messages()
+        response = c.post("/message/%d/delete" % messages_in_group_1[0].pk,{},HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(response.status_code,403)
+
+    def test_message_deletion_admin(self):
+        messages_in_group_1 = self.group_1.get_messages()
+        c = Client()
+
+        c.post("/login/",{"username":self.user_1.user.email,"password":"123456","form":"login_form"})
+        response = c.post("/message/%d/delete" % messages_in_group_1[0].pk,{},HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(response.status_code,200)
+
+        messages_in_group_1 = self.group_1.get_messages()
+        self.assertEqual(len(messages_in_group_1),2)
+
+        response = c.post("/message/%d/delete" % messages_in_group_1[0].pk,{},HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(response.status_code,200)
+
+        messages_in_group_1 = self.group_1.get_messages()
+        self.assertEqual(len(messages_in_group_1),1)
+
+        messages_in_group_2 = self.group_2.get_messages()
+        response = c.post("/message/%d/delete" % messages_in_group_2[0].pk,{},HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(response.status_code,200)
+        messages_in_group_2 = self.group_2.get_messages()
+        self.assertEqual(len(messages_in_group_2),1)

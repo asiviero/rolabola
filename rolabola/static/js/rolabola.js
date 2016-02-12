@@ -54,25 +54,23 @@
       })
     })
 
-    $(".confirm-container .btn").click(function() {
+    $("body").on("click",".confirm-container .btn,.revert-container .btn",function() {
+      console.log("clicked")
       var url = $(this).data("url")
       ajaxGet(url, function(content){
 
       })
     })
 
-    $(".automatic-confirmation-wrapper label").click(function() {
+    $("body").on("click",".automatic-confirmation-wrapper label",function() {
       var url = $(this).siblings("input").addBack().data("url")
-      console.log(url)
       ajaxGet(url, function(content){
 
       })
     })
+
     $(".geoposition-widget").on("marker_dragged",function(e,data){
-      console.log(e)
-      console.log(data)
       $("#id_address").val(data.address)
-      //console.log($(this).text());
     });
 
     $('.modal-trigger').leanModal();
@@ -95,45 +93,17 @@
       })
 
     });
-    /*$('a[name=add_dialog]').click(function() {
-    var dialog, id;
-    id = $(this).data('id');
-    dialog = $('#' + id + '-dialog').dialog();
-    return false;
-  });
-  return $('input[name=add_another_id_series]').click(function() {
-    var data, form;
-    form = $(this).parent().parent().find('#form-dialog');
-    data = {
-      param1: $('#param1').val(),
-      param2: $('#param2').val(),
-      param3: $('#param3').val(),
-      param4: $('#param4').val(),
-      param5: $('#param5').val()
-    };
-    return $.ajax($(this).data('url'), {
-      type: 'POST',
-      beforeSend: function(request) {
-        request.setRequestHeader('Cache-Control', 'no-cache');
-        request.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
-        return request.setRequestHeader('X-CSRFToken', getCookie('csrftoken'));
-      },
-      data: data,
-      success: function(data) {
-        if (data.status === 'Wrong') {
-          $(form).html(data.form);
-        }
-        if (data.status === 'Ok') {
-          $('#id_series').append('<option value="' + data.id + '">' + data.name + '</option>');
-          $('#id_series').val(data.id);
-          $('#id_series-dialog').dialog('close');
-        }
-      }
-    });
-  });*/
+
+    $("#message-form").submit(function(e) {
+      e.preventDefault();
+      console.log("submitted");
+      ajaxPost($(this).data("url"), {
+        "message" : $(this).find("#id_message").val()
+      })
+    })
+
+    $(".btn-delete-message").click(function(e) {
+      ajaxPost($(this).data("url"), {})
+    })
   })
-
-
-
-
 })(jQuery)

@@ -255,6 +255,150 @@ class SearchTest(StaticLiveServerTestCase):
                     buttons = result.find_elements_by_css_selector("a.disabled.btn-join-group i.material-icons")
                     self.assertEqual(len(buttons),1)
 
+    def test_private_groups_are_marked(self):
+        self.browser.get(self.live_server_url)
+
+        form_login = self.browser.find_element_by_id('form_login')
+        form_login.find_element_by_id("id_username").send_keys(self.user_1.user.username)
+        form_login.find_element_by_id("id_password").send_keys("123456")
+        form_login.find_element_by_css_selector("input[type='submit']").click()
+
+        # User sees a search box
+        form_search = self.browser.find_element_by_id('form_search')
+
+        # User types in another user name
+        form_search.find_element_by_css_selector("input[type='text']").send_keys(self.user_2.nickname)
+        form_search.find_element_by_css_selector("input[type='text']").send_keys(Keys.ENTER)
+
+        # User gets redirected to registration page, where he sees
+        # the results of his search
+        time.sleep(1)
+        redirected_url = self.browser.current_url
+
+        self.assertRegexpMatches(redirected_url, "search/*")
+        self.assertIn(self.user_2.user.first_name,self.browser.find_element_by_class_name("main-content").text)
+
+        # User sees an option to search for groups as well
+        self.browser.find_element_by_class_name("side-pane").find_element_by_link_text("Groups").click()
+        time.sleep(1)
+        result_list = self.browser.find_element_by_class_name("group-search-results")
+        results = result_list.find_elements_by_tag_name("li")
+        for result in results:
+            disabled_buttons = result.find_elements_by_css_selector("button.disabled")
+            if self.group_1.name in result.text or self.group_3.name in result.text:
+                self.assertEqual(len(disabled_buttons),0)
+            elif self.group_2.name in result.text or self.group_4.name in result.text:
+                self.assertEqual(len(disabled_buttons),1)
+                self.assertIn("PRIVATE",disabled_buttons[0].text)
+
+class SearchOrderTest(StaticLiveServerTestCase):
+    def setUp(self):
+        self.browser = webdriver.Firefox()
+        self.browser.implicitly_wait(1.5)
+
+        self.user_1 = PlayerFactory()
+        self.user_2 = PlayerFactory()
+        self.user_3 = PlayerFactory()
+        self.user_4 = PlayerFactory()
+        self.user_5 = PlayerFactory()
+        self.user_6 = PlayerFactory()
+        self.user_7 = PlayerFactory()
+
+        self.group_1 = self.user_1.create_group("Group 1", public=True)
+        self.group_2 = self.user_1.create_group("Group 2", public=True)
+        self.group_3 = self.user_1.create_group("Group 3", public=True)
+        self.group_4 = self.user_4.create_group("Group 4", public=True)
+
+        self.user_1.add_user(self.user_2)
+        self.user_2.accept_request_from_friend(self.user_1)
+        self.user_1.add_user(self.user_3)
+        self.user_3.accept_request_from_friend(self.user_1)
+
+        self.user_2.join_group(self.group_2)
+        self.user_2.join_group(self.group_3)
+        self.user_3.join_group(self.group_2)
+        self.user_5.join_group(self.group_4)
+        self.user_6.join_group(self.group_4)
+        self.user_7.join_group(self.group_4)
+
+    def tearDown(self):
+        self.browser.quit()
+
+    def test_search_results_group_order_by_friends_in_group(self):
+        self.browser.get(self.live_server_url)
+
+        form_login = self.browser.find_element_by_id('form_login')
+        form_login.find_element_by_id("id_username").send_keys(self.user_1.user.username)
+        form_login.find_element_by_id("id_password").send_keys("123456")
+        form_login.find_element_by_css_selector("input[type='submit']").click()
+
+        # User sees a search box
+        form_search = self.browser.find_element_by_id('form_search')
+
+        # User types in another user name
+        form_search.find_element_by_css_selector("input[type='text']").send_keys("Group")
+        form_search.find_element_by_css_selector("input[type='text']").send_keys(Keys.ENTER)
+
+        # User gets redirected to registration page, where he sees
+        # the results of his search
+        time.sleep(1)
+        redirected_url = self.browser.current_url
+
+        # User sees an option to search for groups as well
+        self.browser.find_element_by_class_name("side-pane").find_element_by_link_text("Groups").click()
+        time.sleep(1)
+        redirected_url = self.browser.current_url
+
+        self.assertRegexpMatches(redirected_url, "search/*")
+
+        # User sees a list with the results
+        result_list = self.browser.find_element_by_class_name("group-search-results")
+        results = result_list.find_elements_by_tag_name("li")
+        self.assertIn(self.group_2.name,results[0].text)
+        self.assertIn(self.group_3.name,results[1].text)
+        self.assertIn(self.group_1.name,results[2].text)
+        self.assertIn(self.group_4.name,results[3].text)
+
+    def test_friends_in_groups_are_displayed(self):
+        self.browser.get(self.live_server_url)
+
+        form_login = self.browser.find_element_by_id('form_login')
+        form_login.find_element_by_id("id_username").send_keys(self.user_1.user.username)
+        form_login.find_element_by_id("id_password").send_keys("123456")
+        form_login.find_element_by_css_selector("input[type='submit']").click()
+
+        # User sees a search box
+        form_search = self.browser.find_element_by_id('form_search')
+
+        # User types in another user name
+        form_search.find_element_by_css_selector("input[type='text']").send_keys("Group")
+        form_search.find_element_by_css_selector("input[type='text']").send_keys(Keys.ENTER)
+
+        # User gets redirected to registration page, where he sees
+        # the results of his search
+        time.sleep(1)
+        redirected_url = self.browser.current_url
+
+        # User sees an option to search for groups as well
+        self.browser.find_element_by_class_name("side-pane").find_element_by_link_text("Groups").click()
+        time.sleep(1)
+        redirected_url = self.browser.current_url
+
+        self.assertRegexpMatches(redirected_url, "search/*")
+
+        # User sees a list with the results
+        result_list = self.browser.find_element_by_class_name("group-search-results")
+        results = result_list.find_elements_by_tag_name("li")
+        for (key,result) in enumerate(results):
+            if key == 0:
+                self.assertEqual(len(result.find_element_by_class_name("friends-in-group-wrapper").find_elements_by_tag_name("img")),2)
+            elif key == 1:
+                self.assertEqual(len(result.find_element_by_class_name("friends-in-group-wrapper").find_elements_by_tag_name("img")),1)
+            else:
+                self.assertEqual(len(result.find_element_by_class_name("friends-in-group-wrapper").find_elements_by_tag_name("img")),0)
+
+
+
 class GroupTest(StaticLiveServerTestCase):
 
     user_1 = None
@@ -347,7 +491,7 @@ class GroupTest(StaticLiveServerTestCase):
 
         # User enters the desired group url
         self.browser.get("%s/group/%d/" % (self.live_server_url,self.group_public.id))
-
+        time.sleep(5)
         # User clicks the join button
         side_pane = self.browser.find_element_by_class_name('side-pane')
         button = side_pane.find_element_by_css_selector("a.btn-join-group")
@@ -445,7 +589,7 @@ class GroupTest(StaticLiveServerTestCase):
 
         # User goes to group url
         self.browser.get("%s/group/%d/" % (self.live_server_url,self.group_public.id))
-
+        time.sleep(5)
         # In the side pane, user sees a checkbox with regarding group status
         side_pane = self.browser.find_element_by_class_name('side-pane')
         checkbox = side_pane.find_element_by_class_name("public-wrapper").find_element_by_tag_name("input")
@@ -619,12 +763,12 @@ class MatchTest(StaticLiveServerTestCase):
         self.assertRegexpMatches(redirected_url, "match/\d+/")
 
         # Check if an acceptance box is present
-        buttons = self.browser.find_element_by_id("accept-wrapper").find_elements_by_tag_name("button")
+        buttons = self.browser.find_element_by_class_name("confirmed-list").find_element_by_class_name("header").find_element_by_class_name("confirm-container").find_elements_by_tag_name("a")
         self.assertEqual(len(buttons),2)
 
         # Check if buttons are with the right labels
-        self.assertEqual(buttons[0].text,"Yes")
-        self.assertEqual(buttons[1].text,"No")
+        self.assertEqual(buttons[0].find_element_by_tag_name("i").text,"done")
+        self.assertEqual(buttons[1].find_element_by_tag_name("i").text,"clear")
 
         # Return to the home page, then check if the schedule box is present and repeat button tests
         self.browser.get(self.live_server_url)
@@ -860,25 +1004,30 @@ class CalendarTest(StaticLiveServerTestCase):
         self.group_private = self.user_1.create_group("Private Group",public = False)
         self.user_2.join_group(self.group_public)
 
+        self.venue_1 = VenueFactory()
+
         self.user_1.schedule_match(self.group_public,
                                             date=timezone.make_aware(datetime.datetime.today()),
                                             max_participants=15,
                                             min_participants=10,
-                                            price=Decimal("20.0")
+                                            price=Decimal("20.0"),
+                                            venue=self.venue_1
         )
 
         self.user_1.schedule_match(self.group_public,
                                             date=timezone.make_aware(datetime.datetime.today() + datetime.timedelta(days=7)),
                                             max_participants=15,
                                             min_participants=10,
-                                            price=Decimal("20.0")
+                                            price=Decimal("20.0"),
+                                            venue=self.venue_1
         )
 
         self.user_1.schedule_match(self.group_private,
                                             date=timezone.make_aware(datetime.datetime.today()),
                                             max_participants=15,
                                             min_participants=10,
-                                            price=Decimal("20.0")
+                                            price=Decimal("20.0"),
+                                            venue=self.venue_1
         )
 
     def tearDown(self):
@@ -986,8 +1135,8 @@ class CalendarTest(StaticLiveServerTestCase):
         self.assertEqual(len(match_invitations),MatchInvitation.objects.filter(
             match__group__pk=self.group_public.pk,
             player__pk=self.user_1.pk,
-            match__date__gte=timezone.make_aware(sunday_before_first_day_of_month),
-            match__date__lte=timezone.make_aware(next_saturday_after_last_date_of_month)
+            match__date__gte=sunday_before_first_day_of_month,
+            match__date__lte=next_saturday_after_last_date_of_month
         ).count())
 
     def test_calendar_navigation_monthly_on_group_page(self):
@@ -1088,6 +1237,8 @@ class MatchConfirmationTest(StaticLiveServerTestCase):
         self.user_2.user.set_password("123456")
         self.user_2.user.save()
 
+        self.venue_1 = VenueFactory()
+
         last_sunday = datetime.datetime.today()+dateutil.relativedelta.relativedelta(weekday=dateutil.relativedelta.SU(-1))
 
         # Create groups
@@ -1099,35 +1250,40 @@ class MatchConfirmationTest(StaticLiveServerTestCase):
                                             date=timezone.make_aware(last_sunday),
                                             max_participants=15,
                                             min_participants=10,
-                                            price=Decimal("20.0")
+                                            price=Decimal("20.0"),
+                                            venue=self.venue_1
         )
 
         self.match_monday = self.user_1.schedule_match(self.group_public,
                                             date=timezone.make_aware(last_sunday + datetime.timedelta(days=1)),
                                             max_participants=15,
                                             min_participants=10,
-                                            price=Decimal("20.0")
+                                            price=Decimal("20.0"),
+                                            venue=self.venue_1
         )
 
         self.match_tuesday = self.user_1.schedule_match(self.group_public,
                                             date=timezone.make_aware(last_sunday + datetime.timedelta(days=2)),
                                             max_participants=15,
                                             min_participants=10,
-                                            price=Decimal("20.0")
+                                            price=Decimal("20.0"),
+                                            venue=self.venue_1
         )
 
         self.match_wednesday = self.user_1.schedule_match(self.group_public,
                                             date=timezone.make_aware(last_sunday + datetime.timedelta(days=3)),
                                             max_participants=15,
                                             min_participants=10,
-                                            price=Decimal("20.0")
+                                            price=Decimal("20.0"),
+                                            venue=self.venue_1
         )
 
         self.match_thursday = self.user_1.schedule_match(self.group_public,
                                             date=timezone.make_aware(last_sunday + datetime.timedelta(days=4)),
                                             max_participants=0,
                                             min_participants=0,
-                                            price=Decimal("20.0")
+                                            price=Decimal("20.0"),
+                                            venue=self.venue_1
         )
 
         self.user_2.accept_match_invitation(match=self.match_sunday)
@@ -1235,6 +1391,7 @@ class MatchConfirmationTest(StaticLiveServerTestCase):
         form_login.find_element_by_css_selector("input[type='submit']").click()
 
         self.browser.get("%s/group/%d/match/%d" % (self.live_server_url,self.group_public.id,self.match_sunday.pk))
+        time.sleep(3)
         confirmed_list = self.browser.find_element_by_class_name("confirmed-list")
         not_confirmed_list = self.browser.find_element_by_class_name("not-confirmed-list")
         disabled_list = not_confirmed_list.find_elements_by_class_name("disabled")
@@ -1248,6 +1405,7 @@ class MatchConfirmationTest(StaticLiveServerTestCase):
         disabled_list = not_confirmed_list.find_elements_by_class_name("disabled")
         self.assertNotIn(str(self.user_2),confirmed_list.text)
         self.assertIn(str(self.user_2)," ".join([x.text for x in disabled_list]))
+
 
     def test_match_confirmation_in_match_page(self):
         self.browser.get(self.live_server_url)
@@ -1342,120 +1500,148 @@ class MatchConfirmationTest(StaticLiveServerTestCase):
         self.assertEqual(len(buttons),1)
         self.assertIn("NOT GOING",buttons[0].text)
 
-    """def test_user_can_set_automatic_confirmation_in_group(self):
+    def test_admin_match_confirmation(self):
         self.browser.get(self.live_server_url)
-
-        form_login = self.browser.find_element_by_id('form_login')
-        form_login.find_element_by_id("id_username").send_keys(self.user_2.user.username)
-        form_login.find_element_by_id("id_password").send_keys("123456")
-        form_login.find_element_by_css_selector("input[type='submit']").click()
-
-        print(self.group_public.id)
-        self.browser.get("%s/group/%d/" % (self.live_server_url,self.group_public.id))
-        time.sleep(2)
-        self.browser.find_element_by_class_name("automatic-confirmation-wrapper").find_element_by_tag_name("label").click()
-        time.sleep(2)
-        self.browser.quit()
-        self.browser = webdriver.Firefox()
-        self.browser.implicitly_wait(1.5)
-        self.browser.get(self.live_server_url)
-
-        form_login = self.browser.find_element_by_id('form_login')
-        form_login.find_element_by_id("id_username").send_keys(self.user_2.user.username)
-        form_login.find_element_by_id("id_password").send_keys("123456")
-        form_login.find_element_by_css_selector("input[type='submit']").click()
-
-        self.browser.get("%s/group/%d/" % (self.live_server_url,self.group_public.id))
-        time.sleep(5)
-
-        checkbox = self.browser.find_element_by_class_name("automatic-confirmation-wrapper").find_element_by_tag_name("input")
-        self.assertEqual(checkbox.is_selected(),True)
-
-        self.browser.get(self.live_server_url)
-        self.browser.find_element_by_link_text("Logout").click()
-
         form_login = self.browser.find_element_by_id('form_login')
         form_login.find_element_by_id("id_username").send_keys(self.user_1.user.username)
         form_login.find_element_by_id("id_password").send_keys("123456")
         form_login.find_element_by_css_selector("input[type='submit']").click()
 
-        self.browser.get("%s/group/%d/" % (self.live_server_url,self.group_public.id))
-        self.browser.find_element_by_link_text("New Match").click()
-
-        # User fills the form with data on date, price, max and min people
-        form_match = self.browser.find_element_by_id("form-group-match-creation")
-        form_match.find_element_by_id("id_date").send_keys(datetime.date.today().strftime("%d/%m/%Y"))
-        form_match.find_element_by_id("id_price").send_keys("10")
-        form_match.find_element_by_id("id_min_participants").send_keys("10")
-        form_match.find_element_by_id("id_max_participants").send_keys("15")
-
-        form_match.find_element_by_css_selector("input[type='submit']").click()
-
+        self.browser.get("%s/group/%d/match/%d" % (self.live_server_url,self.group_public.id,self.match_tuesday.pk))
+        time.sleep(3)
         confirmed_list = self.browser.find_element_by_class_name("confirmed-list")
-        self.assertIn(str(self.user_2),confirmed_list.text)
+        not_confirmed_list = self.browser.find_element_by_class_name("not-confirmed-list")
+        disabled_list = not_confirmed_list.find_elements_by_class_name("disabled")
+        self.assertIn(str(self.user_1),confirmed_list.text)
+        self.assertIn(str(self.user_2),not_confirmed_list.text)
 
-    def test_admin_can_confirm_presence_of_any_user(self):
+        confirmed_first = confirmed_list.find_elements_by_tag_name("li")[0]
+
+        # Admin confirms his presence
+        button_container = confirmed_first.find_element_by_class_name("confirm-container")
+        links = button_container.find_elements_by_tag_name("a")
+        self.assertEqual(len(links),2)
+
+        links[0].click()
+        time.sleep(3)
+
+        # Refresh lists
+        confirmed_list = self.browser.find_element_by_class_name("confirmed-list")
+        not_confirmed_list = self.browser.find_element_by_class_name("not-confirmed-list")
+        disabled_list = not_confirmed_list.find_elements_by_class_name("disabled")
+
+        # Check user has no more buttons
+        confirmed_first = confirmed_list.find_elements_by_tag_name("li")[0]
+        button_container = confirmed_first.find_elements_by_class_name("confirm-container")
+        self.assertEqual(len(button_container),0)
+
+        # Check non-confirmed remained with the buttons
+        for row in not_confirmed_list.find_elements_by_tag_name("li"):
+            button_container = row.find_element_by_class_name("confirm-container")
+            links = button_container.find_elements_by_tag_name("a")
+            self.assertEqual(len(links),2)
+
+    def test_match_confirmation_revertion_on_match_page(self):
+        # User logs in
         self.browser.get(self.live_server_url)
 
         form_login = self.browser.find_element_by_id('form_login')
-        form_login.find_element_by_id("id_username").send_keys(self.user_1.user.username)
+        form_login.find_element_by_id("id_username").send_keys(self.user_2.user.username)
         form_login.find_element_by_id("id_password").send_keys("123456")
         form_login.find_element_by_css_selector("input[type='submit']").click()
 
-        self.browser.get("%s/group/%d/" % (self.live_server_url,self.group_public.id))
-        self.browser.find_element_by_link_text("New Match").click()
+        self.browser.get("%s/group/%d/match/%d" % (self.live_server_url,self.group_public.id,self.match_tuesday.pk))
+        time.sleep(3)
 
-        # User fills the form with data on date, price, max and min people
-        form_match = self.browser.find_element_by_id("form-group-match-creation")
-        form_match.find_element_by_id("id_date").send_keys(datetime.date.today().strftime("%d/%m/%Y"))
-        form_match.find_element_by_id("id_price").send_keys("10")
-        form_match.find_element_by_id("id_min_participants").send_keys("10")
-        form_match.find_element_by_id("id_max_participants").send_keys("15")
+        # User accepts invitation to match 1
+        confirmed_list = self.browser.find_element_by_class_name("confirmed-list")
+        confirmed_first = confirmed_list.find_elements_by_tag_name("li")[0]
+        button_container = confirmed_first.find_element_by_class_name("confirm-container")
 
-        form_match.find_element_by_css_selector("input[type='submit']").click()
-        not_confirmed_list = self.browser.find_element_by_class_name("not-confirmed-list").find_elements_by_tag_name("li")
-        for row in not_confirmed_list:
-            if str(self.user_2) in row.text:
-                links = row.find_elements_by_tag_name("a")
-                self.assertEqual(len(links),2)
+        links = button_container.find_elements_by_tag_name("a")
+        links[0].click()
+        time.sleep(3)
 
-                # Check if buttons are with the right labels
-                self.assertEqual(links[0].find_element_by_tag_name("i").text,"done")
-                self.assertEqual(links[1].find_element_by_tag_name("i").text,"clear")
+        # User sees his name in the confirmed list, along a button to cancel his confirmation
+        # On the other users, he sees no button
+        confirmed_list_li = self.browser.find_element_by_class_name("confirmed-list").find_elements_by_tag_name("li")
+        refused_list_li = self.browser.find_element_by_class_name("not-confirmed-list").find_elements_by_class_name("disabled")
 
-                links[0].click()
-        time.sleep(1)
-        confirmed_list = self.browser.find_elements_by_css_selector("li:not(.header)")
-        self.assertNotIn(str(self.user_1),"".join([x.text for x in confirmed_list]))
-        self.assertIn(str(self.user_2),"".join([x.text for x in confirmed_list]))
-        for row in confirmed_list:
-            if str(self.user_2) in row.text:
-                links = row.find_elements_by_tag_name("a")
-                self.assertEqual(len(links),0)
-        not_confirmed_list = self.browser.find_element_by_class_name("not-confirmed-list").find_elements_by_tag_name("li")
-        header = self.browser.find_element_by_css_selector("li.header")
-        self.assertIn(str(self.user_1),header.text)
-        self.assertNotIn(str(self.user_2),"".join([x.text for x in not_confirmed_list]))
+        for confirmed in confirmed_list_li:
+            buttons = confirmed.find_element_by_class_name("revert-container")
+            if str(self.user_2) in confirmed.text:
+                links = buttons.find_elements_by_tag_name("a")
+                self.assertEqual(len(links),1)
+                self.assertEqual(links[0].text,"CANCEL")
+            else:
+                self.assertEqual(len(buttons),0)
 
-        # Refresh the page to see if nothing changed
-        self.browser.refresh()
-        confirmed_list = self.browser.find_elements_by_css_selector("li:not(.header)")
-        self.assertNotIn(str(self.user_1),"".join([x.text for x in confirmed_list]))
-        self.assertIn(str(self.user_2),"".join([x.text for x in confirmed_list]))
-        for row in confirmed_list:
-            if str(self.user_2) in row.text:
-                links = row.find_elements_by_tag_name("a")
-                self.assertEqual(len(links),0)
-        not_confirmed_list = self.browser.find_element_by_class_name("not-confirmed-list").find_elements_by_tag_name("li")
-        header = self.browser.find_element_by_css_selector("li.header")
-        self.assertIn(str(self.user_1),header.text)
-        self.assertNotIn(str(self.user_2),"".join([x.text for x in not_confirmed_list]))"""
+        for refused in refused_list_li:
+            buttons = confirmed.find_elements_by_class_name("revert-container")
+            self.assertEqual(len(buttons),0)
+
+        # User clicks the button to revert his confirmation
+        for confirmed in confirmed_list_li:
+            buttons = confirmed.find_elements_by_class_name("revert-container")
+            if str(self.user_2) in confirmed.text:
+                buttons[0].find_elements_by_tag_name("a")[0].click()
+                time.sleep(3)
+
+        # User sees his name on the top of the list again, without revertion button
+        confirmed_list = self.browser.find_element_by_class_name("confirmed-list")
+        confirmed_first = confirmed_list.find_elements_by_tag_name("li")[0]
+        self.assertIn(str(self.user_2),confirmed_first.text)
+        buttons = confirmed_first.find_elements_by_class_name("revert-container")
+        self.assertEqual(len(buttons),0)
+
+        # User refuses invitation to match 2
+        self.browser.get("%s/group/%d/match/%d" % (self.live_server_url,self.group_public.id,self.match_wednesday.pk))
+        time.sleep(3)
+
+        # User accepts invitation to match 1
+        confirmed_list = self.browser.find_element_by_class_name("confirmed-list")
+        confirmed_first = confirmed_list.find_elements_by_tag_name("li")[0]
+        button_container = confirmed_first.find_element_by_class_name("confirm-container")
+
+        links = button_container.find_elements_by_tag_name("a")
+        links[1].click()
+        time.sleep(3)
+
+        # User sees his name in the not-confirmed list, along a button to cancel his confirmation
+        # On the other users, he sees no button
+        confirmed_list_li = self.browser.find_element_by_class_name("confirmed-list").find_elements_by_tag_name("li")
+        refused_list_li = self.browser.find_element_by_class_name("not-confirmed-list").find_elements_by_class_name("disabled")
+
+        for confirmed in confirmed_list_li:
+            buttons = confirmed.find_elements_by_class_name("revert-container")
+            self.assertEqual(len(buttons),0)
+
+        for refused in refused_list_li:
+            buttons = refused.find_elements_by_class_name("revert-container")
+            if str(self.user_2) in refused.text:
+                self.assertEqual(len(buttons[0].find_elements_by_tag_name("a")),1)
+            else:
+                self.assertEqual(len(buttons),0)
+
+        # User clicks the button
+        for refused in refused_list_li:
+            buttons = refused.find_elements_by_class_name("revert-container")
+            if str(self.user_2) in refused.text:
+                buttons[0].find_elements_by_tag_name("a")[0].click()
+                time.sleep(3)
+
+        # User sees his name on the top of the list again, without revertion button
+        confirmed_list = self.browser.find_element_by_class_name("confirmed-list")
+        confirmed_first = confirmed_list.find_elements_by_tag_name("li")[0]
+        self.assertIn(str(self.user_2),confirmed_first.text)
+        buttons = confirmed_first.find_elements_by_class_name("revert-container")
+        self.assertEqual(len(buttons),0)
 
 class VenueTest(StaticLiveServerTestCase):
 
     def setUp(self):
         self.browser = webdriver.Firefox()
-        self.browser.implicitly_wait(1.5)
+        self.browser.implicitly_wait(5)
 
         # Create a user
         self.user_1 = PlayerFactory()
@@ -1474,7 +1660,6 @@ class VenueTest(StaticLiveServerTestCase):
         form_login.find_element_by_css_selector("input[type='submit']").click()
 
         self.browser.get("%s/venue/create" % (self.live_server_url,))
-
         self.browser.find_element_by_id("id_quadra").send_keys("Quadra")
         self.browser.find_element_by_class_name("geoposition-search").find_element_by_tag_name("input").send_keys("Rua do Teste")
         time.sleep(5)
@@ -1482,9 +1667,188 @@ class VenueTest(StaticLiveServerTestCase):
         address = self.browser.find_element_by_class_name("geoposition-address").text
 
         self.browser.find_element_by_id("form-venue-creation").find_element_by_css_selector("input[type='submit']").click()
-        time.sleep(3)
+        time.sleep(5)
 
         redirected_url = self.browser.current_url
         self.assertRegexpMatches(redirected_url, "venue/\d+")
 
         self.assertIn(address,self.browser.find_element_by_class_name("venue-address").text)
+
+class MessageTest(StaticLiveServerTestCase):
+
+    def setUp(self):
+        self.browser = webdriver.Firefox()
+        self.browser.implicitly_wait(5)
+
+        # Create a user
+        self.user_1 = PlayerFactory()
+        self.user_1.user.set_password("123456")
+        self.user_1.user.save()
+        self.user_2 = PlayerFactory()
+        self.user_2.user.set_password("123456")
+        self.user_2.user.save()
+        self.user_3 = PlayerFactory()
+        self.user_3.user.set_password("123456")
+        self.user_3.user.save()
+        self.user_4 = PlayerFactory()
+        self.user_4.user.set_password("123456")
+        self.user_4.user.save()
+        self.group_1 = self.user_1.create_group("Group 1", public=True)
+        self.group_2 = self.user_1.create_group("Group 2", public=False)
+        self.user_2.join_group(self.group_1)
+        self.user_2.join_group(self.group_2)
+        self.user_1.accept_request_group(group=self.group_2,user=self.user_2)
+        self.user_3.join_group(self.group_1)
+        self.user_3.join_group(self.group_2)
+        self.group_3 = self.user_2.create_group("Group 3", public=True)
+
+        # Message sending
+        self.user_1.send_message_group(group=self.group_1,message="test message 1")
+        self.user_2.send_message_group(group=self.group_1,message="test message 2")
+        self.user_3.send_message_group(group=self.group_1,message="test message 3")
+        self.user_1.send_message_group(group=self.group_2,message="test message 1")
+        self.user_2.send_message_group(group=self.group_2,message="test message 2")
+        self.user_3.send_message_group(group=self.group_2,message="test message 3")
+
+    def tearDown(self):
+        self.browser.quit()
+
+    def test_user_can_post_message_to_group_wall(self):
+        self.browser.get(self.live_server_url)
+
+        form_login = self.browser.find_element_by_id('form_login')
+        form_login.find_element_by_id("id_username").send_keys(self.user_2.user.username)
+        form_login.find_element_by_id("id_password").send_keys("123456")
+        form_login.find_element_by_css_selector("input[type='submit']").click()
+
+        self.browser.get("%s/group/%d/" % (self.live_server_url,self.group_1.id))
+
+        # User sees the message wall
+        message_wall = self.browser.find_element_by_id("message-wall")
+
+        # User sees the 3 messages
+        messages = message_wall.find_elements_by_class_name("message-wrapper")
+        self.assertEqual(len(messages),3)
+
+        # In each of those, user sees a picture, a name and a message
+        for message in messages:
+            self.assertEqual(len(message.find_elements_by_class_name("message-author-img")),1)
+            self.assertEqual(len(message.find_elements_by_class_name("message-author-name")),1)
+            self.assertEqual(len(message.find_elements_by_class_name("message-text")),1)
+
+        # User sees the form below the wall
+        message_form = message_wall.find_element_by_tag_name("form")
+
+        message_form.find_element_by_id("id_message").send_keys("Message sent")
+        message_form.find_element_by_id("id_message").send_keys(Keys.ENTER)
+
+        time.sleep(3)
+
+        # User now sees his message atop
+        message_wall = self.browser.find_element_by_id("message-wall")
+
+        # User sees the 3 messages
+        messages = message_wall.find_elements_by_class_name("message-wrapper")
+        self.assertEqual(len(messages),4)
+        self.assertEqual(messages[0].find_element_by_class_name("message-text").text,"Message sent")
+
+        # Updates the page, check if it is still there
+        self.browser.get("%s/group/%d/" % (self.live_server_url,self.group_1.id))
+
+        # User sees the message wall
+        message_wall = self.browser.find_element_by_id("message-wall")
+
+        # User sees the 3 messages
+        messages = message_wall.find_elements_by_class_name("message-wrapper")
+        self.assertEqual(len(messages),4)
+        self.assertEqual(messages[0].find_element_by_class_name("message-text").text,"Message sent")
+
+    def test_user_can_delete_own_messages(self):
+        self.browser.get(self.live_server_url)
+
+        form_login = self.browser.find_element_by_id('form_login')
+        form_login.find_element_by_id("id_username").send_keys(self.user_2.user.username)
+        form_login.find_element_by_id("id_password").send_keys("123456")
+        form_login.find_element_by_css_selector("input[type='submit']").click()
+
+        self.browser.get("%s/group/%d/" % (self.live_server_url,self.group_1.id))
+
+        # User sees the message wall
+        message_wall = self.browser.find_element_by_id("message-wall")
+
+        # User sees the 3 messages
+        messages = message_wall.find_elements_by_class_name("message-wrapper")
+        """self.user_1.send_message_group(group=self.group_1,message="test message 1")
+        self.user_2.send_message_group(group=self.group_1,message="test message 2")
+        self.user_3.send_message_group(group=self.group_1,message="test message 3")"""
+
+        self.assertEqual(len(messages[0].find_elements_by_class_name("btn-delete-message")),0)
+        self.assertEqual(len(messages[1].find_elements_by_class_name("btn-delete-message")),1)
+        self.assertEqual(len(messages[2].find_elements_by_class_name("btn-delete-message")),0)
+
+        # User clicks the delete button
+        messages[1].find_element_by_class_name("btn-delete-message").click()
+
+        time.sleep(3)
+
+        # Message disappears
+        messages = message_wall.find_elements_by_class_name("message-wrapper")
+        self.assertEqual(len(messages),2)
+        self.assertEqual(len(messages[0].find_elements_by_class_name("btn-delete-message")),0)
+        self.assertEqual(len(messages[1].find_elements_by_class_name("btn-delete-message")),0)
+        self.assertEqual(messages[0].find_element_by_class_name("message-text").text,"test message 3")
+        self.assertEqual(messages[1].find_element_by_class_name("message-text").text,"test message 1")
+
+        self.browser.get("%s/group/%d/" % (self.live_server_url,self.group_1.id))
+        message_wall = self.browser.find_element_by_id("message-wall")
+        messages = message_wall.find_elements_by_class_name("message-wrapper")
+        self.assertEqual(len(messages),2)
+        self.assertEqual(len(messages[0].find_elements_by_class_name("btn-delete-message")),0)
+        self.assertEqual(len(messages[1].find_elements_by_class_name("btn-delete-message")),0)
+        self.assertEqual(messages[0].find_element_by_class_name("message-text").text,"test message 3")
+        self.assertEqual(messages[1].find_element_by_class_name("message-text").text,"test message 1")
+
+    def test_admin_can_delete_any_message(self):
+        self.browser.get(self.live_server_url)
+
+        form_login = self.browser.find_element_by_id('form_login')
+        form_login.find_element_by_id("id_username").send_keys(self.user_1.user.username)
+        form_login.find_element_by_id("id_password").send_keys("123456")
+        form_login.find_element_by_css_selector("input[type='submit']").click()
+
+        self.browser.get("%s/group/%d/" % (self.live_server_url,self.group_1.id))
+
+        # User sees the message wall
+        message_wall = self.browser.find_element_by_id("message-wall")
+
+        # User sees the 3 messages
+        messages = message_wall.find_elements_by_class_name("message-wrapper")
+        """self.user_1.send_message_group(group=self.group_1,message="test message 1")
+        self.user_2.send_message_group(group=self.group_1,message="test message 2")
+        self.user_3.send_message_group(group=self.group_1,message="test message 3")"""
+
+        self.assertEqual(len(messages[0].find_elements_by_class_name("btn-delete-message")),1)
+        self.assertEqual(len(messages[1].find_elements_by_class_name("btn-delete-message")),1)
+        self.assertEqual(len(messages[2].find_elements_by_class_name("btn-delete-message")),1)
+
+        # User clicks the delete button
+        messages[1].find_element_by_class_name("btn-delete-message").click()
+
+        time.sleep(3)
+
+        # Message disappears
+        messages = message_wall.find_elements_by_class_name("message-wrapper")
+        self.assertEqual(len(messages),2)
+        self.assertEqual(len(messages[0].find_elements_by_class_name("btn-delete-message")),1)
+        self.assertEqual(len(messages[1].find_elements_by_class_name("btn-delete-message")),1)
+        self.assertEqual(messages[0].find_element_by_class_name("message-text").text,"test message 3")
+        self.assertEqual(messages[1].find_element_by_class_name("message-text").text,"test message 1")
+
+        self.browser.get("%s/group/%d/" % (self.live_server_url,self.group_1.id))
+        message_wall = self.browser.find_element_by_id("message-wall")
+        messages = message_wall.find_elements_by_class_name("message-wrapper")
+        self.assertEqual(len(messages),2)
+        self.assertEqual(len(messages[0].find_elements_by_class_name("btn-delete-message")),1)
+        self.assertEqual(len(messages[1].find_elements_by_class_name("btn-delete-message")),1)
+        self.assertEqual(messages[0].find_element_by_class_name("message-text").text,"test message 3")
+        self.assertEqual(messages[1].find_element_by_class_name("message-text").text,"test message 1")
