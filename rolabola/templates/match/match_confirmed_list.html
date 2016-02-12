@@ -20,9 +20,9 @@
     {% for confirmed_player in match.get_confirmed_list %}
       <li>
         {{ confirmed_player }}
-        {% if player == confirmed_player.pk %}
+        {% if player == confirmed_player.pk or user_is_admin %}
           <div class="revert-container">
-            <a class="btn red" data-url="{% url "group-match-revert" group.pk match.pk %}">CANCEL</a>
+            <a class="btn red" data-url="{% url "group-match-revert" group.pk match.pk %}?u={{ confirmed_player.pk }}">CANCEL</a>
           </div>
         {% endif %}
       </li>
@@ -41,21 +41,21 @@
           <a class="btn btn-floating btn-tiny green btn-accept-invitation" data-url="{% url "group-match-accept" group.pk match.pk %}?u={{ not_confirmed_player.pk }}">
             <i class="material-icons">done</i>
           </a>
-          <a class="btn btn-floating btn-tiny red btn-refuse-invitation" data-url="{% url "group-match-reject" group.pk match.pk %}">
+          <a class="btn btn-floating btn-tiny red btn-refuse-invitation" data-url="{% url "group-match-reject" group.pk match.pk %}?u={{ not_confirmed_player.pk }}">
             <i class="material-icons">clear</i>
           </a>
         </div>
         {% endif %}
       </li>
     {% empty %}
-      <li>No confirmed players</li>
+      <li>No not-confirmed players</li>
     {% endfor %}
     {% for refused_player in match.get_refused_list %}
       <li class="disabled">
         {{ refused_player }}
-        {% if player == refused_player.pk %}
+        {% if player == refused_player.pk or user_is_admin %}
         <div class="revert-container">
-          <a class="btn red" data-url="{% url "group-match-revert" group.pk match.pk %}">CANCEL</a>
+          <a class="btn red" data-url="{% url "group-match-revert" group.pk match.pk %}?u={{ refused_player.pk }}">CANCEL</a>
         </div>
         {% endif %}
       </li>
