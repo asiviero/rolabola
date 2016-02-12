@@ -383,12 +383,14 @@ def group_match_accept(request,group,match):
     match=get_object_or_404(Match,pk=match)
 
     if request.GET.get("u") is not None:
-        if request.user.player in group.member_list.filter(membership__role=Membership.GROUP_ADMIN):
+        if request.user.player in group.member_list.filter(membership__role=Membership.GROUP_ADMIN) or \
+           str(request.user.player.pk) == request.GET.get("u"):
             player = get_object_or_404(Player,pk=request.GET.get("u"))
         else:
             return {}
     else:
         player = request.user.player
+
 
     player.accept_match_invitation(match=match)
     match_invitation_template = loader.get_template("match_invitation_calendar.html")
@@ -421,9 +423,9 @@ def group_match_accept(request,group,match):
 def group_match_reject(request,group,match):
     group=get_object_or_404(Group,pk=group)
     match=get_object_or_404(Match,pk=match)
-
     if request.GET.get("u") is not None:
-        if request.user.player in group.member_list.filter(membership__role=Membership.GROUP_ADMIN):
+        if request.user.player in group.member_list.filter(membership__role=Membership.GROUP_ADMIN) or \
+           str(request.user.player.pk) == request.GET.get("u"):
             player = get_object_or_404(Player,pk=request.GET.get("u"))
         else:
             return {}
@@ -462,9 +464,9 @@ def group_match_reject(request,group,match):
 def group_match_revert(request,group,match):
     group=get_object_or_404(Group,pk=group)
     match=get_object_or_404(Match,pk=match)
-
     if request.GET.get("u") is not None:
-        if request.user.player in group.member_list.filter(membership__role=Membership.GROUP_ADMIN):
+        if request.user.player in group.member_list.filter(membership__role=Membership.GROUP_ADMIN) or \
+           str(request.user.player.pk) == request.GET.get("u"):
             player = get_object_or_404(Player,pk=request.GET.get("u"))
         else:
             return {}

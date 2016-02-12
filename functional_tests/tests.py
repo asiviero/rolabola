@@ -1637,6 +1637,123 @@ class MatchConfirmationTest(StaticLiveServerTestCase):
         buttons = confirmed_first.find_elements_by_class_name("revert-container")
         self.assertEqual(len(buttons),0)
 
+    def test_admin_match_confirmation_revertion_on_match_page(self):
+        # Admin logs in
+        self.browser.get(self.live_server_url)
+
+        form_login = self.browser.find_element_by_id('form_login')
+        form_login.find_element_by_id("id_username").send_keys(self.user_1.user.username)
+        form_login.find_element_by_id("id_password").send_keys("123456")
+        form_login.find_element_by_css_selector("input[type='submit']").click()
+
+        self.browser.get("%s/group/%d/match/%d" % (self.live_server_url,self.group_public.id,self.match_tuesday.pk))
+        time.sleep(3)
+
+        # Admin accepts invitation to match 1
+        confirmed_list = self.browser.find_element_by_class_name("confirmed-list")
+        confirmed_first = confirmed_list.find_elements_by_tag_name("li")[0]
+        button_container = confirmed_first.find_element_by_class_name("confirm-container")
+
+        links = button_container.find_elements_by_tag_name("a")
+        links[0].click()
+        time.sleep(3)
+
+        # Admin confirms the other user as well
+        non_confirmed_list = self.browser.find_element_by_class_name("not-confirmed-list").find_elements_by_tag_name("li")
+        for non_confirmed in non_confirmed_list:
+            if str(self.user_2) in non_confirmed.text:
+                button_container = non_confirmed.find_element_by_class_name("confirm-container")
+                links = button_container.find_elements_by_tag_name("a")
+                links[0].click()
+                time.sleep(3)
+
+        # Admin sees his name in the confirmed list, along a button to cancel his confirmation
+        # On the other users, he sees the button as well
+        confirmed_list_li = self.browser.find_element_by_class_name("confirmed-list").find_elements_by_tag_name("li")
+        self.assertEqual(len(confirmed_list_li),2)
+
+        refused_list_li = self.browser.find_element_by_class_name("not-confirmed-list").find_elements_by_class_name("disabled")
+
+        for confirmed in confirmed_list_li:
+            buttons = confirmed.find_element_by_class_name("revert-container")
+            links = buttons.find_elements_by_tag_name("a")
+            self.assertEqual(len(links),1)
+            self.assertEqual(links[0].text,"CANCEL")
+
+        for refused in refused_list_li:
+            buttons = confirmed.find_elements_by_class_name("revert-container")
+            self.assertEqual(len(buttons),2)
+
+        # Admin clicks the user button to revert his confirmation
+        for confirmed in confirmed_list_li:
+            buttons = confirmed.find_elements_by_class_name("revert-container")
+            if str(self.user_2) in confirmed.text:
+                buttons[0].find_elements_by_tag_name("a")[0].click()
+                time.sleep(3)
+
+        # Admin sees uuser name on the non-confirmed list again, without revertion button
+        not_confirmed_list = self.browser.find_element_by_class_name("not-confirmed-list")
+        self.assertIn(str(self.user_2),not_confirmed_list.text)
+        not_confirmed_list_li = not_confirmed_list.find_elements_by_tag_name("li")
+
+        for not_confirmed in not_confirmed_list_li:
+            if str(self.user_2) in not_confirmed.text:
+                buttons = not_confirmed.find_elements_by_class_name("revert-container")
+                self.assertEqual(len(buttons),0)
+
+        # Admin refuses invitation to match 2
+        self.browser.get("%s/group/%d/match/%d" % (self.live_server_url,self.group_public.id,self.match_wednesday.pk))
+        time.sleep(3)
+
+        # User accepts invitation to match 1
+        confirmed_list = self.browser.find_element_by_class_name("confirmed-list")
+        confirmed_first = confirmed_list.find_elements_by_tag_name("li")[0]
+        button_container = confirmed_first.find_element_by_class_name("confirm-container")
+
+        links = button_container.find_elements_by_tag_name("a")
+        links[1].click()
+        time.sleep(3)
+
+        # Admin confirms absence of user
+        not_confirmed_list = self.browser.find_element_by_class_name("not-confirmed-list")
+        # self.assertIn(str(self.user_2),not_confirmed_list.text)
+        not_confirmed_list_li = not_confirmed_list.find_elements_by_tag_name("li")
+
+        for non_confirmed in not_confirmed_list_li:
+            if str(self.user_2) in non_confirmed.text:
+                button_container = non_confirmed.find_element_by_class_name("confirm-container")
+                links = button_container.find_elements_by_tag_name("a")
+                links[1].click()
+                time.sleep(3)
+                break
+
+        # Admin sees his name in the not-confirmed list, along a button to cancel his confirmation
+        # On the other users, he sees the button as well
+        confirmed_list_li = self.browser.find_element_by_class_name("confirmed-list").find_elements_by_tag_name("li")
+        refused_list_li = self.browser.find_element_by_class_name("not-confirmed-list").find_elements_by_class_name("disabled")
+
+        for refused in refused_list_li:
+            buttons = refused.find_elements_by_class_name("revert-container")
+            self.assertEqual(len(buttons[0].find_elements_by_tag_name("a")),1)
+
+        # Admin clicks the user button
+        for refused in refused_list_li:
+            buttons = refused.find_elements_by_class_name("revert-container")
+            if str(self.user_2) in refused.text:
+                buttons[0].find_elements_by_tag_name("a")[0].click()
+                time.sleep(3)
+                break
+
+        # Admin sees user name on not-confirmed list again, without revertion button
+        not_confirmed_list = self.browser.find_element_by_class_name("not-confirmed-list")
+        self.assertIn(str(self.user_2),not_confirmed_list.text)
+        not_confirmed_list_li = not_confirmed_list.find_elements_by_tag_name("li")
+
+        for not_confirmed in not_confirmed_list_li:
+            if str(self.user_2) in not_confirmed.text:
+                buttons = not_confirmed.find_elements_by_class_name("revert-container")
+                self.assertEqual(len(buttons),0)
+
 class VenueTest(StaticLiveServerTestCase):
 
     def setUp(self):
