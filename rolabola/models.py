@@ -182,16 +182,16 @@ class Player(models.Model):
             )
 
     def get_match_invitations(self,start_date=None,end_date=None,group=None):
-        start_date = datetime.datetime.combine(start_date,datetime.datetime.min.time())
-        end_date = datetime.datetime.combine(end_date,datetime.datetime.min.time())
-        if timezone.is_naive(start_date):
-            start_date = timezone.make_aware(start_date)
-        if timezone.is_naive(end_date):
-            end_date = timezone.make_aware(end_date)
         match_invitation_list = MatchInvitation.objects.filter(player__pk=self.pk)
-        if not start_date is None:
+        if start_date is not None:
+            start_date = datetime.datetime.combine(start_date,datetime.datetime.min.time())
+            if timezone.is_naive(start_date):
+                start_date = timezone.make_aware(start_date)
             match_invitation_list = match_invitation_list.filter(match__date__gte=start_date)
-        if not end_date is None:
+        if end_date is not None:
+            end_date = datetime.datetime.combine(end_date,datetime.datetime.min.time())
+            if timezone.is_naive(end_date):
+                end_date = timezone.make_aware(end_date)
             match_invitation_list = match_invitation_list.filter(match__date__lte=end_date)
         if not group is None:
             match_invitation_list = match_invitation_list.filter(match__group__pk=group.pk)
