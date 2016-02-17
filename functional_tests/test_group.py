@@ -99,8 +99,12 @@ class GroupTest(StaticLiveServerTestCase):
         self.assertIn("JOIN",button.text)
         button.click()
         time.sleep(5)
-        # User now sees his name on the member list
-        self.assertIn(self.user_2.user.first_name,self.browser.find_element_by_id("member-list").text)
+
+        # User sees a list of images in member list, regarding all the users in the group
+        img_list = self.browser.find_element_by_id("member-list").find_elements_by_tag_name("img")
+        img_src_users = sorted(["%s%s" % (self.live_server_url,x.fetch_picture().url) for x in self.group_public.member_list.all()])
+        img_src_page = sorted([x.get_attribute("src") for x in img_list])
+        self.assertListEqual(img_src_page,img_src_users)
 
     def test_join_button_behavior_on_group_page(self):
 
@@ -218,7 +222,6 @@ class GroupTest(StaticLiveServerTestCase):
 
         # Accept the first (user_1), reject the second (user_3)
         time.sleep(5)
-        # self.assertEqual(membership_requests[0].find_element_by_class_name("player-name").text,self.user_1.get_name())
         if(str(self.user_1) == membership_requests[0].find_element_by_class_name("player-name").text):
             membership_requests[0].find_element_by_css_selector("a.btn-accept-group i.material-icons").click()
         else :
@@ -248,8 +251,11 @@ class GroupTest(StaticLiveServerTestCase):
 
         self.browser.get("%s/group/%s" % (self.live_server_url,self.group_4.pk))
 
-        self.assertIn(self.user_1.user.first_name,self.browser.find_element_by_id("member-list").text)
-        self.assertNotIn(self.user_3.user.first_name,self.browser.find_element_by_id("member-list").text)
+        # User sees a list of images in member list, regarding all the users in the group
+        img_list = self.browser.find_element_by_id("member-list").find_elements_by_tag_name("img")
+        img_src_users = sorted(["%s%s" % (self.live_server_url,x.fetch_picture().url) for x in self.group_4.member_list.all()])
+        img_src_page = sorted([x.get_attribute("src") for x in img_list])
+        self.assertListEqual(img_src_page,img_src_users)
 
     def test_admin_can_accept_or_reject_membership_requests_in_group_page(self):
         self.browser.get(self.live_server_url)
@@ -271,13 +277,16 @@ class GroupTest(StaticLiveServerTestCase):
             membership_requests[0].find_element_by_css_selector("a.btn-reject-group i.material-icons").click()
 
         time.sleep(5)
-        self.assertIn(self.user_1.user.first_name,self.browser.find_element_by_id("member-list").text)
+        # User sees a list of images in member list, regarding all the users in the group
+        img_list = self.browser.find_element_by_id("member-list").find_elements_by_tag_name("img")
+        img_src_users = sorted(["%s%s" % (self.live_server_url,x.fetch_picture().url) for x in self.group_4.member_list.all()])
+        img_src_page = sorted([x.get_attribute("src") for x in img_list])
+        self.assertListEqual(img_src_page,img_src_users)
 
         requests_block = self.browser.find_element_by_class_name("membership-requests")
         membership_requests = requests_block.find_elements_by_tag_name("li")
 
         self.assertEqual(len(membership_requests),1)
-        self.assertIn(self.user_1.user.first_name,self.browser.find_element_by_id("member-list").text)
 
         if(str(self.user_1) == membership_requests[0].find_element_by_class_name("player-name").text):
             membership_requests[0].find_element_by_css_selector("a.btn-accept-group i.material-icons").click()
@@ -289,7 +298,11 @@ class GroupTest(StaticLiveServerTestCase):
         membership_requests = requests_block.find_elements_by_tag_name("li")
         self.assertEqual(len(membership_requests),0)
 
-        self.assertNotIn(self.user_3.user.first_name,self.browser.find_element_by_id("member-list").text)
+        # User sees a list of images in member list, regarding all the users in the group
+        img_list = self.browser.find_element_by_id("member-list").find_elements_by_tag_name("img")
+        img_src_users = sorted(["%s%s" % (self.live_server_url,x.fetch_picture().url) for x in self.group_4.member_list.all()])
+        img_src_page = sorted([x.get_attribute("src") for x in img_list])
+        self.assertListEqual(img_src_page,img_src_users)
 
     def test_non_admin_cant_see_membership_requests(self):
         self.browser.get(self.live_server_url)
