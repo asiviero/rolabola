@@ -90,6 +90,10 @@ def calendar_update_monthly(request):
                                                                                                                      start_date=sunday_before_first_day_of_month,
                                                                                                                      end_date=next_saturday_after_last_date_of_month)
     match_templates = {k:[] for k in [x for x in dates]}
+    for match_invitation in match_invitations_in_month:
+        if match_invitation.match.date.date() >= today:
+            match_invitation.should_active = True
+            break
 
     match_invitation_template = loader.get_template("match_invitation_calendar.html")
     for match_invitation in match_invitations_in_month:
@@ -226,6 +230,10 @@ def group(request,group):
     match_invitations_in_month = request.user.player.get_match_invitations(group=group,
                                                                                                                      start_date=sunday_before_first_day_of_month,
                                                                                                                      end_date=next_saturday_after_last_date_of_month)
+    for match_invitation in match_invitations_in_month:
+        if match_invitation.match.date.date() >= today:
+            match_invitation.should_active = True
+            break
     match_templates = {k:[] for k in [x for x in dates]}
 
     match_invitation_template = loader.get_template("match_invitation_calendar.html")

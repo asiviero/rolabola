@@ -306,3 +306,56 @@ class GroupTest(StaticLiveServerTestCase):
 
         requests_block = self.browser.find_elements_by_class_name("membership-requests")
         self.assertEqual(len(requests_block),0)
+
+    @override_settings(CELERY_ALWAYS_EAGER=True)
+    def test_match_selection_on_group_page(self):
+        # This test should check if the next match scheduled for a group is selected
+        # when the group page is accessed. On the right side of it, a map with this
+        # match's location, map and date/time.
+        #def schedule_match(self,group,date,max_participants,min_participants,price,venue,until=None):
+
+        venue_1 = VenueFactory()
+        venue_2 = VenueFactory()
+
+        tomorrow = timezone.make_aware(datetime.datetime.today() + datetime.timedelta(days = 1))
+        yesterday = timezone.make_aware(datetime.datetime.today() - datetime.timedelta(days = 1))
+
+        self.user_1.schedule_match(
+            group = self.group_public,
+            date = tomorrow,
+            max_participants = 15,
+            min_participants = 10,
+            price = 10,
+            venue = venue_1
+        )
+        self.user_1.schedule_match(
+            group = self.group_public,
+            date = yesterday,
+            max_participants = 15,
+            min_participants = 10,
+            price = 10,
+            venue = venue_2
+        )
+
+        # User 1 logs in
+        self.browser.get(self.live_server_url)
+
+        form_login = self.browser.find_element_by_id('form_login')
+        form_login.find_element_by_id("id_username").send_keys(self.user_1.user.username)
+        form_login.find_element_by_id("id_password").send_keys("123456")
+        form_login.find_element_by_css_selector("input[type='submit']").click()
+
+        self.browser.get("%s/group/%s" % (self.live_server_url,self.group_public.pk))
+
+        calendar_table = self.browser.find_element_by_class_name("calendar-table")
+        calendar_table_td_list = calendar_table.find_elements_by_tag_name("td")
+
+        for cell in calendar_table_td_list:
+            # inactive = cell.find_elements_by_class_name("inactive")
+            label = cell.find_element_by_tag_name("label")
+            if "inactive" in label.get_attribute("class"):
+                continue
+            if str(label.text) == str(tomorrow.day):
+                # Get the first match in the list and checks if its labeled as active
+                match_invitations = cell.find_elements_by_class_name("match-invitation")
+                self.assertIn("active",match_invitations[0].get_attribute("class"))
