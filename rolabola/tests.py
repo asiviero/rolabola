@@ -592,6 +592,28 @@ class MatchTest(TestCase):
         # Checks if no match invitations were issued
         self.assertEqual(MatchInvitation.objects.all().count(),3*total_matches)
 
+    def test_non_manager_cant_access_edit_page(self):
+        venue_1 = VenueFactory()
+        user_1 = PlayerFactory()
+        user_2 = PlayerFactory()
+        user_3 = PlayerFactory()
+        user_4 = PlayerFactory()
+        group_1 = user_1.create_group("Group 1", public=True)
+        user_2.join_group(group_1)
+        user_3.join_group(group_1)
+        match = user_1.schedule_match(group_1,
+                                            date=timezone.make_aware(datetime.datetime.now()),
+                                            max_participants=15,
+                                            min_participants=10,
+                                            price=Decimal("20.0"),
+                                            venue=venue_1,
+                                            until=timezone.make_aware(datetime.datetime.now() + datetime.timedelta(days=500)))
+        c = Client()
+        c.post("/login/",{"username":user_2.user.email,"password":"123456","form":"login_form"})
+        response = c.get(reverse("group-match-edit"),{"group":group_1.pk,"match":match.pk},HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(response.status_code, 403)
+
+
 class CalendarTest(TestCase):
 
     @override_settings(CELERY_ALWAYS_EAGER=True)

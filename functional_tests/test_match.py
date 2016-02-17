@@ -278,7 +278,148 @@ class MatchTest(StaticLiveServerTestCase):
 
         time.sleep(1)
 
-        # Perform the calendar tests
+        # todo perform calendar tests
+
+    def test_manager_can_edit_match(self):
+
+        self.browser.get(self.live_server_url)
+
+        form_login = self.browser.find_element_by_id('form_login')
+        form_login.find_element_by_id("id_username").send_keys(self.user_2.user.username)
+        form_login.find_element_by_id("id_password").send_keys("123456")
+        form_login.find_element_by_css_selector("input[type='submit']").click()
+
+        # Creates the match
+        buttons_match_create = self.browser.find_elements_by_class_name("btn-match-create")
+
+        time.sleep(3)
+
+        buttons_match_create[0].click()
+
+        time.sleep(3)
+
+        today = datetime.date.today().strftime("%d/%m/%Y %H:%M")
+        price = 10
+        min_participants = 10
+        max_participants = 15
+        form_match = self.browser.find_element_by_id("form-group-match-creation")
+        form_match.find_element_by_id("id_date").send_keys(today)
+        form_match.find_element_by_id("id_price").send_keys(price)
+        form_match.find_element_by_id("id_min_participants").send_keys(min_participants)
+        form_match.find_element_by_id("id_max_participants").send_keys(max_participants)
+
+        form_match.find_element_by_css_selector("input[type='submit']").click()
+
+        time.sleep(1)
+
+        # Check that it has been redirected to a match page
+        redirected_url = self.browser.current_url
+        self.assertRegexpMatches(redirected_url, "match/\d+/")
+        match_url = redirected_url
+
+        # Checks for an edit button, then clicks it
+        buttons_match_edit = self.browser.find_elements_by_class_name("btn-match-edit")
+        self.assertEqual(len(buttons_match_edit),1)
+        buttons_match_edit[0].click()
+
+        # Checks if the url is correct
+        time.sleep(1)
+        redirected_url = self.browser.current_url
+        self.assertRegexpMatches(redirected_url, "match/\d+/edit")
+
+        # Checks if the input values are correct
+        form_match = self.browser.find_element_by_id("form-group-match-creation")
+        self.assertEqual(form_match.find_element_by_id("id_date").get_attribute("value"),today)
+        self.assertEqual(form_match.find_element_by_id("id_price").get_attribute("value"),price)
+        self.assertEqual(form_match.find_element_by_id("id_min_participants").get_attribute("value"),min_participants)
+        self.assertEqual(form_match.find_element_by_id("id_max_participants").get_attribute("value"),max_participants)
+
+        # Checks until end of month/year options are not there
+        # self.assertEqual(len(form_match.find_elements_by_id("id_until_end_of_month")),0)
+        # self.assertEqual(len(form_match.find_elements_by_id("id_until_end_of_year")),0)
+
+        # Changes the inputs
+        form_match.find_element_by_id("id_date").clear()
+        form_match.find_element_by_id("id_price").clear()
+        form_match.find_element_by_id("id_min_participants").clear()
+        form_match.find_element_by_id("id_max_participants").clear()
+
+        tomorrow = today + datetime.timedelta(days=1)
+        form_match.find_element_by_id("id_date").send_keys(tomorrow)
+        form_match.find_element_by_id("id_price").send_keys(price+5)
+        form_match.find_element_by_id("id_min_participants").send_keys(min_participants+5)
+        form_match.find_element_by_id("id_max_participants").send_keys(max_participants+5)
+
+        form_match.find_element_by_css_selector("input[type='submit']").click()
+
+        time.sleep(1)
+
+        # Checks if the url is correct
+        time.sleep(1)
+        redirected_url = self.browser.current_url
+        self.assertRegexpMatches(redirected_url, "match/\d+/")
+        self.assertEqual(redirected_url,match_url)
+
+        # Clicks edit again, then test if the data is updated
+        buttons_match_edit = self.browser.find_elements_by_class_name("btn-match-edit")
+        self.assertEqual(len(buttons_match_edit),1)
+        buttons_match_edit[0].click()
+
+        form_match = self.browser.find_element_by_id("form-group-match-creation")
+        self.assertEqual(form_match.find_element_by_id("id_date").get_attribute("value"),tomorrow)
+        self.assertEqual(form_match.find_element_by_id("id_price").get_attribute("value"),price+5)
+        self.assertEqual(form_match.find_element_by_id("id_min_participants").get_attribute("value"),min_participants+5)
+        self.assertEqual(form_match.find_element_by_id("id_max_participants").get_attribute("value"),max_participants+5)
+
+    def test_user_cant_edit_match(self):
+        # User 1 logs in
+        self.browser.get(self.live_server_url)
+
+        form_login = self.browser.find_element_by_id('form_login')
+        form_login.find_element_by_id("id_username").send_keys(self.user_1.user.username)
+        form_login.find_element_by_id("id_password").send_keys("123456")
+        form_login.find_element_by_css_selector("input[type='submit']").click()
+
+        # User enters the desired group url
+        self.browser.get("%s/group/%d/" % (self.live_server_url,self.group_public.id))
+
+        # User clicks "schedule match"
+        self.browser.find_element_by_link_text("New Match").click()
+        redirected_url = self.browser.current_url
+        self.assertRegexpMatches(redirected_url, "group/\d+/match")
+
+        # User fills the form with data on date, price, max and min people
+        form_match = self.browser.find_element_by_id("form-group-match-creation")
+        form_match.find_element_by_id("id_date").send_keys(datetime.datetime.now().strftime("%d/%m/%Y %H:%M"))
+        form_match.find_element_by_id("id_price").send_keys("10")
+        form_match.find_element_by_id("id_min_participants").send_keys("10")
+        form_match.find_element_by_id("id_max_participants").send_keys("15")
+
+        form_match.find_element_by_css_selector("input[type='submit']").click()
+        time.sleep(2)
+
+        match_url = self.browser.current_url
+        self.assertRegexpMatches(match_url, "match/\d+/")
+
+        # Logs out
+        self.browser.get(self.live_server_url)
+        self.browser.find_element_by_link_text("Logout").click()
+
+        # User 2 logs in, then goes to the match page
+        self.browser.get(self.live_server_url)
+
+        form_login = self.browser.find_element_by_id('form_login')
+        form_login.find_element_by_id("id_username").send_keys(self.user_1.user.username)
+        form_login.find_element_by_id("id_password").send_keys("123456")
+        form_login.find_element_by_css_selector("input[type='submit']").click()
+
+        self.browser.get(match_url)
+
+        # No edit button should be present
+        buttons_match_edit = self.browser.find_elements_by_class_name("btn-match-edit")
+        self.assertEqual(len(buttons_match_edit),0)
+
+
 @override_settings(CELERY_ALWAYS_EAGER=True)
 class MatchConfirmationTest(StaticLiveServerTestCase):
 
