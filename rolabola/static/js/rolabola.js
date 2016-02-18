@@ -64,9 +64,16 @@
 
     $("body").on("click",".automatic-confirmation-wrapper label",function() {
       var url = $(this).siblings("input").addBack().data("url")
+
       ajaxGet(url, function(content){
 
       })
+    })
+
+    $("body").on("click",".match-invitation",function() {
+      console.log("clicked")
+      $(".match-invitation.active").removeClass("active").addClass("inactive")
+      $(this).removeClass("inactive").addClass("active")
     })
 
     $(".geoposition-widget").on("marker_dragged",function(e,data){

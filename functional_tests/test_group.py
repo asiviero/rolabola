@@ -318,6 +318,7 @@ class GroupTest(StaticLiveServerTestCase):
         venue_2 = VenueFactory()
 
         tomorrow = timezone.make_aware(datetime.datetime.today() + datetime.timedelta(days = 1))
+        after_tomorrow = timezone.make_aware(datetime.datetime.today() + datetime.timedelta(days = 2))
         yesterday = timezone.make_aware(datetime.datetime.today() - datetime.timedelta(days = 1))
 
         self.user_1.schedule_match(
@@ -327,6 +328,14 @@ class GroupTest(StaticLiveServerTestCase):
             min_participants = 10,
             price = 10,
             venue = venue_1
+        )
+        self.user_1.schedule_match(
+            group = self.group_public,
+            date = after_tomorrow,
+            max_participants = 15,
+            min_participants = 10,
+            price = 10,
+            venue = venue_2
         )
         self.user_1.schedule_match(
             group = self.group_public,
@@ -358,4 +367,11 @@ class GroupTest(StaticLiveServerTestCase):
             if str(label.text) == str(tomorrow.day):
                 # Get the first match in the list and checks if its labeled as active
                 match_invitations = cell.find_elements_by_class_name("match-invitation")
-                self.assertIn("active",match_invitations[0].get_attribute("class"))
+                self.assertIn(" active",match_invitations[0].get_attribute("class"))
+            if str(label.text) == str(after_tomorrow.day):
+                # Clicks on the other
+                cell.click()
+                time.sleep(1)
+                match_invitations = cell.find_elements_by_class_name("match-invitation")
+                self.assertNotIn("inactive",match_invitations[0].get_attribute("class"))
+                self.assertIn(" active",match_invitations[0].get_attribute("class"))
