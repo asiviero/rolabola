@@ -37,6 +37,8 @@
   </div>
 {% endblock %}
 {% block main_content_block %}
+<div class="row">
+  <div class="col m8">
   {% if is_admin %}
     {% if request_list.count %}
     <div class="membership-requests">
@@ -90,5 +92,8 @@
     <i class="material-icons">add</i>
   </a>
   {% endif %}
-
+  </div>
+  <div class="col m4">
+    {{ map_sidebar }}
+  </div>
 {% endblock %}

@@ -90,6 +90,10 @@ def calendar_update_monthly(request):
                                                                                                                      start_date=sunday_before_first_day_of_month,
                                                                                                                      end_date=next_saturday_after_last_date_of_month)
     match_templates = {k:[] for k in [x for x in dates]}
+    for match_invitation in match_invitations_in_month:
+        if match_invitation.match.date.date() >= today:
+            match_invitation.should_active = True
+            break
 
     match_invitation_template = loader.get_template("match_invitation_calendar.html")
     for match_invitation in match_invitations_in_month:
@@ -226,6 +230,11 @@ def group(request,group):
     match_invitations_in_month = request.user.player.get_match_invitations(group=group,
                                                                                                                      start_date=sunday_before_first_day_of_month,
                                                                                                                      end_date=next_saturday_after_last_date_of_month)
+    for match_invitation in match_invitations_in_month:
+        if match_invitation.match.date.date() >= today:
+            match_invitation.should_active = True
+            next_match = match_invitation.match
+            break
     match_templates = {k:[] for k in [x for x in dates]}
 
     match_invitation_template = loader.get_template("match_invitation_calendar.html")
@@ -242,6 +251,9 @@ def group(request,group):
     rendered_messages = [message_list_template.render({"message":message,"is_admin":is_admin,"player":request.user.player}) for message in group.get_messages()]
     # message_list_template.render({"message":self})
 
+    map_sidebar_template = loader.get_template("group/group_map_sidebar.html")
+    map_sidebar_view = map_sidebar_template.render({"match" : next_match})
+
     return render(request, "group.html", {
         "group":group,
         "user_in_group":user_in_group,
@@ -251,8 +263,24 @@ def group(request,group):
         "calendar_view":calendar_view,
         "automatic_confirmation":automatic_confirmation,
         "message_form":MessageForm,
-        "messages":rendered_messages
+        "messages":rendered_messages,
+        "map_sidebar": map_sidebar_view
     })
+
+@login_required
+@group_membership_required
+@ajax
+def group_update_map(request):
+    if request.method == 'POST':
+        match = get_object_or_404(Match,pk=request.POST.get("match"))
+        map_sidebar_template = loader.get_template("group/group_map_sidebar.html")
+        map_sidebar_view = map_sidebar_template.render({"match" : match})
+        response = {
+            "fragments" : {
+                "#group-map-wrapper" : map_sidebar_view
+            }
+        }
+        return response
 
 @login_required
 @ajax

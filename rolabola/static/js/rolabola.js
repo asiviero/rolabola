@@ -64,7 +64,22 @@
 
     $("body").on("click",".automatic-confirmation-wrapper label",function() {
       var url = $(this).siblings("input").addBack().data("url")
+
       ajaxGet(url, function(content){
+
+      })
+    })
+
+    $("body").on("click",".match-invitation",function() {
+      console.log("clicked")
+      console.log($(this).data("match"))
+      $(".match-invitation.active").removeClass("active").addClass("inactive")
+      $(this).removeClass("inactive").addClass("active")
+      var data = {
+        "match" : $(this).data("match"),
+        "group" : $(this).data("group"),
+      }
+      ajaxPost($(this).data("url"), data, function(content) {
 
       })
     })

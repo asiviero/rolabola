@@ -1,4 +1,4 @@
-<div class="match-invitation" data-match="{{match_invitation.match.pk}}">
+<div class="match-invitation {{ match_invitation.should_active|yesno:'active,inactive' }}" data-match="{{match_invitation.match.pk}}" data-url="{% url "group-update-map" %}" data-group="{{ match_invitation.match.group.pk }}">
   <a href="{% url "group-match" match_invitation.match.group.pk match_invitation.match.pk %}">
     {{match_invitation.match.group.name}}
   </a>
