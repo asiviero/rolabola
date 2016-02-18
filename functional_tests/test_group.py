@@ -321,7 +321,7 @@ class GroupTest(StaticLiveServerTestCase):
         after_tomorrow = timezone.make_aware(datetime.datetime.today() + datetime.timedelta(days = 2))
         yesterday = timezone.make_aware(datetime.datetime.today() - datetime.timedelta(days = 1))
 
-        self.user_1.schedule_match(
+        match_tomorrow = self.user_1.schedule_match(
             group = self.group_public,
             date = tomorrow,
             max_participants = 15,
@@ -329,7 +329,7 @@ class GroupTest(StaticLiveServerTestCase):
             price = 10,
             venue = venue_1
         )
-        self.user_1.schedule_match(
+        match_after_tomorrow = self.user_1.schedule_match(
             group = self.group_public,
             date = after_tomorrow,
             max_participants = 15,
@@ -337,7 +337,7 @@ class GroupTest(StaticLiveServerTestCase):
             price = 10,
             venue = venue_2
         )
-        self.user_1.schedule_match(
+        match_yesterday = self.user_1.schedule_match(
             group = self.group_public,
             date = yesterday,
             max_participants = 15,
@@ -356,6 +356,14 @@ class GroupTest(StaticLiveServerTestCase):
 
         self.browser.get("%s/group/%s" % (self.live_server_url,self.group_public.pk))
 
+        # Check for the info in the side bar
+        map_wrapper = self.browser.find_element_by_id("group-map-wrapper")
+        map_div = map_wrapper.find_element_by_id("map-canvas")
+        location_address_label = map_wrapper.find_element_by_class_name("match-location-address")
+        self.assertEqual(location_address_label.text, match_tomorrow.venue.address.replace("\n"," "))
+        time_label = map_wrapper.find_element_by_class_name("match-time")
+        self.assertEqual(time_label.text, match_tomorrow.date.strftime("%H:%M"))
+
         calendar_table = self.browser.find_element_by_class_name("calendar-table")
         calendar_table_td_list = calendar_table.find_elements_by_tag_name("td")
 
@@ -370,8 +378,16 @@ class GroupTest(StaticLiveServerTestCase):
                 self.assertIn(" active",match_invitations[0].get_attribute("class"))
             if str(label.text) == str(after_tomorrow.day):
                 # Clicks on the other
-                cell.click()
+                cell.find_elements_by_class_name("match-invitation")[0].find_element_by_class_name("time").click()
+                # cell.click()
                 time.sleep(1)
                 match_invitations = cell.find_elements_by_class_name("match-invitation")
                 self.assertNotIn("inactive",match_invitations[0].get_attribute("class"))
                 self.assertIn(" active",match_invitations[0].get_attribute("class"))
+                # Check for the info in the side bar
+                map_wrapper = self.browser.find_element_by_id("group-map-wrapper")
+                map_div = map_wrapper.find_element_by_id("map-canvas")
+                location_address_label = map_wrapper.find_element_by_class_name("match-location-address")
+                self.assertEqual(location_address_label.text, match_after_tomorrow.venue.address.replace("\n"," "))
+                time_label = map_wrapper.find_element_by_class_name("match-time")
+                self.assertEqual(time_label.text, match_after_tomorrow.date.strftime("%H:%M"))

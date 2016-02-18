@@ -1,0 +1,28 @@
+{% load l10n %}
+<div id="group-map-wrapper">
+  <h3>Match at {{ match.date|date:"d/m" }}
+  <div class="geoposition-widget" data-map-widget-height="{{ config.map_widget_height }}" data-map-options="{{ config.map_options }}" data-marker-options="{{ config.marker_options }}">
+    <div id="map-canvas" style="height: 300px;"></div>
+    <script>
+              function initialize() {
+                  var map = new google.maps.Map(document.getElementById('map-canvas'));
+                  var bounds = new google.maps.LatLngBounds();
+                  function addMarker(lat, lng, title) {
+                      var position = new google.maps.LatLng(lat, lng);
+                      var marker = new google.maps.Marker({
+                          position: position,
+                          map: map,
+                          title: "{{ match.venue.quadra }}"
+                      });
+                      bounds.extend(position);
+                      map.fitBounds(bounds);
+                      map.setOptions({maxZoom: 14});
+                  }
+                  addMarker({{ match.venue.location.latitude|unlocalize }}, {{ match.venue.location.longitude|unlocalize }}, "{{ match.venue.quadra }}");
+              }
+              initialize()
+          </script>
+  </div>
+  <label class="match-location-address">{{ match.venue.address }}</label>
+  <label class="match-time">{{ match.date|date:"H:i" }}</label>
+</div>

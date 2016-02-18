@@ -29,6 +29,7 @@ urlpatterns = [
     url(r'^group/(\d+)/match/(\d+)/accept$', views.group_match_accept, name="group-match-accept"),
     url(r'^group/(\d+)/match/(\d+)/revert$', views.group_match_revert, name="group-match-revert"),
     url(r'^group/(\d+)/match/(\d+)/reject$', views.group_match_reject, name="group-match-reject"),
+    url(r'^group/update_map$', views.group_update_map, name="group-update-map"),
     url(r'^calendar/update-weekly/$', views.calendar_update_weekly, name="calendar-update-weekly"),
     url(r'^calendar/update-monthly/$', views.calendar_update_monthly, name="calendar-update-monthly"),
     url(r'^venue/(\d+)/$', views.venue, name="venue"),
