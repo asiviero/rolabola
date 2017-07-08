@@ -15,3 +15,5 @@ script:
   - python manage.py test
 notifications:
   slack: rolabola:gp20B9T95TF94Y7azgyG74xp
+addons:
+  firefox: "latest"
