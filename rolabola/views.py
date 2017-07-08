@@ -90,6 +90,7 @@ def calendar_update_monthly(request):
                                                                                                                      start_date=sunday_before_first_day_of_month,
                                                                                                                      end_date=next_saturday_after_last_date_of_month)
     match_templates = {k:[] for k in [x for x in dates]}
+    today = datetime.date.today()
     for match_invitation in match_invitations_in_month:
         if match_invitation.match.date.date() >= today:
             match_invitation.should_active = True
@@ -138,6 +139,8 @@ def login_and_register(request):
                     if request.POST.get('next') :
                         return redirect(request.POST.get('next'))
                     return redirect(reverse("home"))
+            else:
+                print("user is  none!")
         elif request.POST.get("form") == "user_creation_form":
             form = UserForm(request.POST)
             form_player = PlayerForm(request.POST)
@@ -230,6 +233,7 @@ def group(request,group):
     match_invitations_in_month = request.user.player.get_match_invitations(group=group,
                                                                                                                      start_date=sunday_before_first_day_of_month,
                                                                                                                      end_date=next_saturday_after_last_date_of_month)
+    next_match = None
     for match_invitation in match_invitations_in_month:
         if match_invitation.match.date.date() >= today:
             match_invitation.should_active = True
@@ -539,7 +543,7 @@ def message_send(request,group):
         message_list_template = loader.get_template("message/message.html")
         return {
             "prepend-fragments" : {
-                "#message-wall" : message_list_template.render({"message":message})
+                "#message-wall" : message_list_template.render({"message":message, "player": request.user.player, "bind" : True})
             }
         }
     else:
@@ -558,10 +562,11 @@ def venue_create(request):
     if request.method == 'POST':
         venue_create_form = VenueForm(request.POST)
         if venue_create_form.is_valid():
+            location = venue_create_form.cleaned_data["location"]
             venue = Venue.objects.create(
                 quadra=venue_create_form.cleaned_data["quadra"],
                 address=venue_create_form.cleaned_data["address"],
-                location=venue_create_form.cleaned_data["location"],
+                location="%s,%s" % (location[0], location[1])
             )
             if(request.is_ajax()) :
                 response = {"id":venue.pk, "append-fragments" : {"#id_venue" : "<option value='%s'>%s</option>" % (venue.pk,venue.quadra)}}

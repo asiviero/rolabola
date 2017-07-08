@@ -89,13 +89,13 @@
   </div>
   <a href="logout/?next=/">Logout</a>
   <div class="fixed-action-btn">
-    <a class="btn-floating btn-large waves-effect waves-light green" href="#">
+    <a class="btn-floating btn-large waves-effect waves-light green" id="btn-match-new" href="#">
       <i class="material-icons">add</i>
     </a>
     <ul>
       {% for membership in user.player.membership_set.all %}
         <li>
-          <a class="btn-match-create btn-floating" href="{% url 'group-match-create' membership.group.id %}">
+          <a class="btn-match-create btn-floating" name="{{ membership.group.name }}" href="{% url 'group-match-create' membership.group.id %}">
             <img class="responsive-img circle" src="{{ membership.group.fetch_picture }}" />
           </a>
         </li>

@@ -1,7 +1,7 @@
 django==1.8
 selenium
 factory_boy
-fake-factory
+Faker
 Pillow
 django-material
 python-dateutil

@@ -88,7 +88,7 @@
       $("#id_address").val(data.address)
     });
 
-    $('.modal-trigger').leanModal();
+    $('.modal-trigger').modal();
 
     $("#id_venue-dialog a.modal-submit").click(function() {
       var url = $(this).data("url")
@@ -118,7 +118,7 @@
     })
 
     $(".btn-delete-message").click(function(e) {
-      ajaxPost($(this).data("url"), {})
+      ajaxPost($(this).data("url"), {});
     })
   })
 })(jQuery)

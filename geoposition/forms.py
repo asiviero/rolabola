@@ -15,8 +15,8 @@ class GeopositionField(forms.MultiValueField):
     def __init__(self, *args, **kwargs):
         self.widget = GeopositionWidget()
         fields = (
-            forms.DecimalField(label=_('latitude')),
-            forms.DecimalField(label=_('longitude')),
+            forms.FloatField(label=_('latitude')),
+            forms.FloatField(label=_('longitude')),
         )
         if 'initial' in kwargs:
             kwargs['initial'] = Geoposition(*kwargs['initial'].split(','))

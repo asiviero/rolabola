@@ -156,7 +156,10 @@ class MatchTest(StaticLiveServerTestCase):
 
         time.sleep(3)
 
-        buttons_match_create[0].click()
+        wait = WebDriverWait(self.browser, 10)
+        ActionChains(self.browser).move_to_element(self.browser.find_element_by_id("btn-match-new")).perform()
+        button = wait.until(EC.element_to_be_clickable((By.NAME, self.group_public)))
+        button.click()
 
         time.sleep(3)
 
@@ -262,7 +265,10 @@ class MatchTest(StaticLiveServerTestCase):
 
         time.sleep(3)
 
-        buttons_match_create[0].click()
+        wait = WebDriverWait(self.browser, 10)
+        ActionChains(self.browser).move_to_element(self.browser.find_element_by_id("btn-match-new")).perform()
+        button = wait.until(EC.element_to_be_clickable((By.NAME, self.group_public)))
+        button.click()
 
         time.sleep(3)
 

@@ -2,16 +2,8 @@
 
 apt-get update
 apt-get install -y python3 python3-pip git firefox redis-server xvfb libjpeg-dev zlib1g-dev
-pip3 install django==1.8
-pip3 install --upgrade selenium
-pip3 install factory_boy
-pip3 install fake-factory
-pip3 install Pillow
-pip3 install django-material
-pip3 install python-dateutil
-pip3 install django-allauth
-pip3 install djangoajax
-pip3 install celery
-pip3 install redis
-pip3 install django-appconf
-pip3 install django-guardian
+wget https://github.com/mozilla/geckodriver/releases/download/v0.17.0/geckodriver-v0.17.0-linux64.tar.gz
+tar -xvzf geckodriver*
+chmod +x geckodriver
+cp geckodriver /usr/local/bin/geckodriver
+rm geckodriver*

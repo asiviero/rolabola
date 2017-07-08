@@ -232,8 +232,8 @@ class Player(models.Model):
         )
         admin_players = group.member_list.filter(membership__role=Membership.GROUP_ADMIN)
         for player in admin_players:
-            UserObjectPermission.objects.assign_perm("delete_message",user=player.user,obj=message)
-        UserObjectPermission.objects.assign_perm("delete_message",user=self.user,obj=message)
+            UserObjectPermission.objects.assign_perm("delete_message",player.user,obj=message)
+        UserObjectPermission.objects.assign_perm("delete_message",self.user,obj=message)
         return message
 
 

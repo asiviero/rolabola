@@ -160,8 +160,8 @@ CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'America/Sao_Paulo'
 
 # Maps
-
 GOOGLE_MAPS_V3_APIKEY = "AIzaSyANMg7jLGPM9Jt-YpRVl_VgVqMDvX7kAA4"
+GEOPOSITION_GOOGLE_MAPS_API_KEY = "AIzaSyANMg7jLGPM9Jt-YpRVl_VgVqMDvX7kAA4"
 
 AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend', # default

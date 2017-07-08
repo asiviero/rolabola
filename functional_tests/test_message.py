@@ -1,4 +1,5 @@
 from functional_tests import *
+import sys
 
 class MessageTest(StaticLiveServerTestCase):
 
@@ -111,8 +112,7 @@ class MessageTest(StaticLiveServerTestCase):
 
         # User clicks the delete button
         messages[1].find_element_by_class_name("btn-delete-message").click()
-
-        time.sleep(10)
+        time.sleep(1)
 
         # Message disappears
         messages = message_wall.find_elements_by_class_name("message-wrapper")
@@ -153,11 +153,10 @@ class MessageTest(StaticLiveServerTestCase):
 
         # User clicks the delete button
         messages[1].find_element_by_class_name("btn-delete-message").click()
-
-        time.sleep(10)
-
+        time.sleep(1)
         # Message disappears
-        messages = message_wall.find_elements_by_class_name("message-wrapper")
+        messages = self.browser.find_element_by_id("message-wall").find_elements_by_class_name("message-wrapper")
+
         self.assertEqual(len(messages),2)
         self.assertEqual(len(messages[0].find_elements_by_class_name("btn-delete-message")),1)
         self.assertEqual(len(messages[1].find_elements_by_class_name("btn-delete-message")),1)
